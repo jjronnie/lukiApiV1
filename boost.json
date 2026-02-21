@@ -1,0 +1,22 @@
+{
+    "agents": [
+        "codex",
+        "copilot"
+    ],
+    "guidelines": true,
+    "herd_mcp": false,
+    "mcp": true,
+    "packages": [
+        "laravel/fortify",
+        "spatie/laravel-medialibrary",
+        "spatie/laravel-permission"
+    ],
+    "sail": true,
+    "skills": [
+        "pest-testing",
+        "tailwindcss-development",
+        "developing-with-fortify",
+        "medialibrary-development",
+        "laravel-permission-development"
+    ]
+}
