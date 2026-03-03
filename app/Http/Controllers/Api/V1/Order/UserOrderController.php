@@ -1,0 +1,222 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1\Order;
+
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Order\CancelOrderRequest;
+use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
+use App\Http\Resources\OrderResource;
+use App\Models\Order;
+use App\Models\Service;
+use App\Services\DispatchService;
+use App\Services\IdempotencyService;
+use App\Services\PriceEstimateService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
+
+class UserOrderController extends Controller
+{
+    public function __construct(
+        private readonly PriceEstimateService $priceEstimateService,
+        private readonly DispatchService $dispatchService,
+        private readonly IdempotencyService $idempotencyService,
+    ) {}
+
+    public function store(StoreOrderRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+
+        $idempotencyKey = $data['idempotency_key'] ?? $request->header('Idempotency-Key');
+        $requestHash = hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
+
+        if ($idempotencyKey !== null) {
+            $idempotentResult = $this->idempotencyService->check($request->user(), 'orders.create', $idempotencyKey, $requestHash);
+            if ($idempotentResult['replay'] === true) {
+                return response()->json($idempotentResult['response_body'], $idempotentResult['response_code']);
+            }
+        }
+
+        $service = Service::query()
+            ->where('public_id', $data['service_public_id'])
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $addOnIds = $service->addOns()
+            ->whereIn('public_id', $data['add_on_public_ids'] ?? [])
+            ->pluck('id')
+            ->all();
+
+        $breakdown = $this->priceEstimateService->estimate(
+            service: $service,
+            addOnIds: $addOnIds,
+            distanceKm: (float) ($data['distance_km'] ?? 0),
+            serviceMinutes: (int) ($data['service_minutes'] ?? $service->duration_minutes),
+            promoCode: $data['promo_code'] ?? null,
+        );
+
+        $order = DB::transaction(function () use ($request, $data, $service, $addOnIds, $breakdown) {
+            $order = Order::query()->create([
+                'user_id' => $request->user()->id,
+                'status' => OrderStatus::Created,
+                'is_scheduled' => $data['is_scheduled'],
+                'scheduled_at' => $data['is_scheduled'] ? $data['scheduled_at'] : null,
+                'address_text' => $data['address_text'],
+                'location_lat' => $data['location_lat'],
+                'location_lng' => $data['location_lng'],
+                'place_id' => $data['place_id'] ?? null,
+                'location_notes' => $data['location_notes'] ?? null,
+                'payment_method' => $data['payment_method'],
+                'payment_status' => PaymentStatus::Unpaid,
+                'subtotal_amount' => $breakdown['subtotal_amount'],
+                'distance_fee_amount' => $breakdown['distance_fee_amount'],
+                'overtime_fee_amount' => $breakdown['overtime_fee_amount'],
+                'peak_fee_amount' => $breakdown['peak_fee_amount'],
+                'tax_amount' => $breakdown['tax_amount'],
+                'discount_amount' => $breakdown['discount_amount'],
+                'total_amount' => $breakdown['total_amount'],
+                'price_breakdown' => $breakdown,
+                'promo_code' => $data['promo_code'] ?? null,
+            ]);
+
+            $order->items()->create([
+                'item_type' => 'service',
+                'service_id' => $service->id,
+                'name_snapshot' => $service->name,
+                'unit_price_amount' => $service->base_price_amount,
+                'quantity' => 1,
+                'line_total_amount' => $service->base_price_amount,
+            ]);
+
+            $addOns = $service->addOns()->whereIn('id', $addOnIds)->where('is_active', true)->get();
+            foreach ($addOns as $addOn) {
+                $order->items()->create([
+                    'item_type' => 'add_on',
+                    'add_on_id' => $addOn->id,
+                    'name_snapshot' => $addOn->name,
+                    'unit_price_amount' => $addOn->price_amount,
+                    'quantity' => 1,
+                    'line_total_amount' => $addOn->price_amount,
+                ]);
+            }
+
+            $order->statusHistories()->create([
+                'from_status' => null,
+                'to_status' => OrderStatus::Created->value,
+                'changed_by_user_id' => $request->user()->id,
+                'meta' => ['source' => 'user_order_create'],
+                'created_at' => now(),
+            ]);
+
+            return $order;
+        });
+
+        if (! $order->is_scheduled) {
+            $fromStatus = $order->status;
+            $order->update([
+                'status' => OrderStatus::Offering,
+                'offering_started_at' => now(),
+            ]);
+
+            $order->statusHistories()->create([
+                'from_status' => $fromStatus->value,
+                'to_status' => OrderStatus::Offering->value,
+                'changed_by_user_id' => $request->user()->id,
+                'meta' => ['source' => 'dispatch_start'],
+                'created_at' => now(),
+            ]);
+
+            $this->dispatchService->offerInBatches(
+                $order,
+                (int) config('luki.dispatch.offer_batch_size', 3),
+                (int) config('luki.dispatch.offer_expiry_seconds', 15),
+            );
+        }
+
+        $responseBody = [
+            'message' => 'Order created.',
+            'order' => (new OrderResource($order->load(['items', 'statusHistories', 'providerProfile'])))->resolve(),
+        ];
+
+        if ($idempotencyKey !== null) {
+            $this->idempotencyService->store($request->user(), 'orders.create', $idempotencyKey, $requestHash, 201, $responseBody);
+        }
+
+        return response()->json($responseBody, 201);
+    }
+
+    public function index(): AnonymousResourceCollection
+    {
+        $orders = Order::query()
+            ->where('user_id', auth()->id())
+            ->with(['items', 'providerProfile'])
+            ->latest()
+            ->paginate(20);
+
+        return OrderResource::collection($orders);
+    }
+
+    public function show(string $publicId): OrderResource
+    {
+        $order = Order::query()
+            ->where('public_id', $publicId)
+            ->where('user_id', auth()->id())
+            ->with(['items', 'providerProfile', 'statusHistories'])
+            ->firstOrFail();
+
+        return new OrderResource($order);
+    }
+
+    public function cancel(CancelOrderRequest $request, string $publicId): JsonResponse
+    {
+        $order = Order::query()
+            ->where('public_id', $publicId)
+            ->where('user_id', $request->user()->id)
+            ->with('providerProfile')
+            ->firstOrFail();
+
+        if (in_array($order->status, [OrderStatus::Completed, OrderStatus::Cancelled, OrderStatus::Expired, OrderStatus::InService], true)) {
+            return response()->json(['message' => 'Order cannot be cancelled in current status.'], 422);
+        }
+
+        $cancelFee = 0;
+        if ($order->status === OrderStatus::OnTheWay) {
+            $cancelFee = (int) config('luki.cancellation_fee_amount', 2000);
+        }
+
+        if ($order->status === OrderStatus::Accepted && $order->accepted_at !== null && $order->accepted_at->diffInMinutes(now()) > 2) {
+            $cancelFee = (int) config('luki.cancellation_fee_amount', 2000);
+        }
+
+        $fromStatus = $order->status;
+        $order->update([
+            'status' => OrderStatus::Cancelled,
+            'cancelled_at' => now(),
+            'cancelled_by_user_id' => $request->user()->id,
+            'cancellation_reason' => $request->validated('reason'),
+            'cancellation_fee_amount' => $cancelFee,
+        ]);
+
+        if ($order->providerProfile !== null) {
+            $order->providerProfile->increment('cancelled_orders_count');
+        }
+
+        $order->statusHistories()->create([
+            'from_status' => $fromStatus->value,
+            'to_status' => OrderStatus::Cancelled->value,
+            'changed_by_user_id' => $request->user()->id,
+            'meta' => [
+                'reason' => $request->validated('reason'),
+                'cancellation_fee_amount' => $cancelFee,
+            ],
+            'created_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Order cancelled.',
+            'order' => new OrderResource($order->load(['items', 'providerProfile', 'statusHistories'])),
+        ]);
+    }
+}

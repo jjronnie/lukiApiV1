@@ -1,164 +1,238 @@
 <?php
 
-// app/Http/Controllers/Api/V1/Auth/AuthController.php
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Enums\RoleName;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Auth\LoginRequest;
+use App\Http\Requests\Api\V1\Auth\RefreshTokenRequest;
+use App\Http\Requests\Api\V1\Auth\RegisterRequest;
+use App\Http\Requests\Api\V1\Auth\VerifyEmailOtpRequest;
+use App\Http\Requests\Api\V1\Auth\VerifyLoginOtpRequest;
+use App\Http\Resources\UserResource;
 use App\Models\RefreshToken;
 use App\Models\User;
-use Carbon\Carbon;
+use App\Services\AuthTokenService;
+use App\Services\EmailOtpService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    private const ACCESS_TOKEN_NAME = 'api';
-    private const ACCESS_TOKEN_TTL_MINUTES = 60;
-    private const REFRESH_TOKEN_TTL_DAYS = 30;
+    public function __construct(
+        private readonly AuthTokenService $authTokenService,
+        private readonly EmailOtpService $emailOtpService,
+    ) {}
 
-    public function register(Request $request)
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name' => ['required','string','max:120'],
-            'email' => ['required','email','max:255','unique:users,email'],
-            'password' => ['required','string','min:8','max:255'],
-        ]);
+        $data = $request->validated();
 
-        $user = User::create([
-            'name' => $data['name'],
+        $name = $data['name']
+            ?? Str::of($data['email'])->before('@')->replace('.', ' ')->title()->value();
+
+        $user = User::query()->create([
+            'name' => $name,
             'email' => strtolower($data['email']),
-            'password' => Hash::make($data['password']),
+            'phone' => $data['phone'] ?? null,
+            'password' => $data['password'],
         ]);
 
-        $user->assignRole('user');
+        $role = $data['register_as'] === 'provider'
+            ? RoleName::Provider->value
+            : RoleName::User->value;
 
-        // Optional: send verification email immediately
-        $user->sendEmailVerificationNotification();
+        $user->assignRole($role);
 
-        return $this->issueTokens($user, $request);
+        $otp = $this->emailOtpService->issue($user, 'email_verification');
+
+        return response()->json([
+            'message' => 'Verification code sent to email.',
+            'email' => $user->email,
+            ...$otp,
+        ], 202);
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'email' => ['required','email'],
-            'password' => ['required','string'],
-        ]);
+        $data = $request->validated();
 
-        $user = User::where('email', strtolower($data['email']))->first();
+        $user = User::query()->where('email', strtolower($data['email']))->first();
 
-        if (! $user || ! Hash::check($data['password'], $user->password)) {
+        if ($user === null || ! Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['Invalid credentials.'],
             ]);
         }
 
-        if ($user->is_blocked ?? false) {
+        if ($user->is_blocked) {
             throw ValidationException::withMessages([
-                'email' => ['Account is blocked.'],
+                'email' => ['This account is blocked.'],
             ]);
         }
 
-        return $this->issueTokens($user, $request);
+        if ($user->hasAnyRole([RoleName::Superadmin->value, RoleName::Admin->value])) {
+            return response()->json([
+                'message' => 'Admin accounts can only sign in on the web portal.',
+            ], 403);
+        }
+
+        $otp = $this->emailOtpService->issue($user, 'login');
+
+        return response()->json([
+            'message' => 'Verification code sent to email.',
+            'email' => $user->email,
+            ...$otp,
+        ], 202);
     }
 
-    public function refresh(Request $request)
+    public function refresh(RefreshTokenRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'refresh_token' => ['required','string'],
-        ]);
+        $hash = hash('sha256', $request->validated('refresh_token'));
 
-        $hash = hash('sha256', $data['refresh_token']);
+        $refreshToken = RefreshToken::query()->where('token_hash', $hash)->first();
 
-        $rt = RefreshToken::where('token_hash', $hash)->first();
-
-        if (! $rt) {
+        if ($refreshToken === null) {
             throw ValidationException::withMessages([
-                'refresh_token' => ['Invalid refresh token.'],
+                'refresh_token' => ['Refresh token is invalid.'],
             ]);
         }
 
-        if ($rt->revoked_at !== null) {
+        if ($refreshToken->revoked_at !== null || $refreshToken->expires_at->isPast()) {
             throw ValidationException::withMessages([
-                'refresh_token' => ['Refresh token revoked.'],
+                'refresh_token' => ['Refresh token is no longer valid.'],
             ]);
         }
 
-        if (Carbon::now()->greaterThan($rt->expires_at)) {
-            throw ValidationException::withMessages([
-                'refresh_token' => ['Refresh token expired.'],
-            ]);
-        }
-
-        $user = $rt->user;
-
-        // Rotate refresh token: revoke old, create new
-        $rt->update([
+        $refreshToken->update([
             'revoked_at' => now(),
             'last_used_at' => now(),
         ]);
 
-        return $this->issueTokens($user, $request);
+        $user = $refreshToken->user;
+
+        if ($user->hasAnyRole([RoleName::Superadmin->value, RoleName::Admin->value])) {
+            return response()->json([
+                'message' => 'Admin accounts can only sign in on the web portal.',
+            ], 403);
+        }
+
+        $tokens = $this->authTokenService->issue($user, $request);
+
+        return response()->json([
+            ...$tokens,
+            'user' => new UserResource($user->load('roles')),
+        ]);
     }
 
-    public function me(Request $request)
+    public function verifyEmailOtp(VerifyEmailOtpRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+
+        $record = $this->emailOtpService->verify($data['otp_token'], $data['code'], 'email_verification');
+        $user = $record->user;
+
+        if ($user === null || strtolower($data['email']) !== strtolower($record->email)) {
+            throw ValidationException::withMessages([
+                'code' => ['Invalid or expired verification code.'],
+            ]);
+        }
+
+        if ($user->hasAnyRole([RoleName::Superadmin->value, RoleName::Admin->value])) {
+            return response()->json([
+                'message' => 'Admin accounts can only sign in on the web portal.',
+            ], 403);
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
+        $user->forceFill(['last_seen_at' => now()])->save();
+
+        $tokens = $this->authTokenService->issue($user, $request);
+
+        return response()->json([
+            ...$tokens,
+            'user' => new UserResource($user->load('roles')),
+        ]);
+    }
+
+    public function verifyLoginOtp(VerifyLoginOtpRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+
+        $record = $this->emailOtpService->verify($data['otp_token'], $data['code'], 'login');
+        $user = $record->user;
+
+        if ($user === null || strtolower($data['email']) !== strtolower($record->email)) {
+            throw ValidationException::withMessages([
+                'code' => ['Invalid or expired verification code.'],
+            ]);
+        }
+
+        if ($user->is_blocked) {
+            throw ValidationException::withMessages([
+                'email' => ['This account is blocked.'],
+            ]);
+        }
+
+        if ($user->hasAnyRole([RoleName::Superadmin->value, RoleName::Admin->value])) {
+            return response()->json([
+                'message' => 'Admin accounts can only sign in on the web portal.',
+            ], 403);
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
+        $user->forceFill(['last_seen_at' => now()])->save();
+
+        $tokens = $this->authTokenService->issue($user, $request);
+
+        return response()->json([
+            ...$tokens,
+            'user' => new UserResource($user->load('roles')),
+        ]);
+    }
+
+    public function me(Request $request): JsonResponse
     {
         return response()->json([
-            'user' => $request->user(),
+            'user' => new UserResource($request->user()->load('roles')),
         ]);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'refresh_token' => ['nullable','string'],
-            'logout_all' => ['nullable','boolean'],
+            'refresh_token' => ['nullable', 'string'],
+            'logout_all' => ['nullable', 'boolean'],
         ]);
 
-        // Revoke current access token
         $request->user()->currentAccessToken()?->delete();
 
-        if (!empty($data['logout_all']) && $data['logout_all'] === true) {
-            // Revoke all refresh tokens
-            RefreshToken::where('user_id', $request->user()->id)
+        if (($data['logout_all'] ?? false) === true) {
+            RefreshToken::query()
+                ->where('user_id', $request->user()->id)
                 ->whereNull('revoked_at')
                 ->update(['revoked_at' => now()]);
-        } elseif (!empty($data['refresh_token'])) {
-            $hash = hash('sha256', $data['refresh_token']);
-            RefreshToken::where('user_id', $request->user()->id)
-                ->where('token_hash', $hash)
+
+            $request->user()->tokens()->delete();
+        }
+
+        if (! empty($data['refresh_token'])) {
+            RefreshToken::query()
+                ->where('user_id', $request->user()->id)
+                ->where('token_hash', hash('sha256', $data['refresh_token']))
                 ->whereNull('revoked_at')
                 ->update(['revoked_at' => now()]);
         }
 
-        return response()->json(['message' => 'Logged out.']);
-    }
-
-    private function issueTokens(User $user, Request $request)
-    {
-        // Delete old access tokens if you want 1 device token only.
-        // $user->tokens()->delete();
-
-        $accessToken = $user->createToken(self::ACCESS_TOKEN_NAME)->plainTextToken;
-
-        $rawRefresh = Str::random(64);
-        RefreshToken::create([
-            'user_id' => $user->id,
-            'token_hash' => hash('sha256', $rawRefresh),
-            'expires_at' => now()->addDays(self::REFRESH_TOKEN_TTL_DAYS),
-            'user_agent' => substr((string) $request->userAgent(), 0, 255),
-            'ip' => $request->ip(),
-        ]);
-
-        return response()->json([
-            'access_token' => $accessToken,
-            'token_type' => 'Bearer',
-            'expires_in' => self::ACCESS_TOKEN_TTL_MINUTES * 60,
-            'refresh_token' => $rawRefresh,
-            'refresh_expires_in' => self::REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60,
-            'user' => $user,
-        ]);
+        return response()->json(['message' => 'Logged out successfully.']);
     }
 }

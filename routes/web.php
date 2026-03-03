@@ -1,16 +1,58 @@
 <?php
 
+use App\Http\Controllers\Admin\CommissionRuleController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DisputeController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\ProviderController;
+use App\Http\Controllers\Admin\ServiceAddOnController;
+use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\ServicePricingRuleController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WalletController;
+use App\Http\Controllers\Api\V1\Auth\EmailVerificationController;
+use App\Http\Controllers\Web\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
-// routes/web.php or routes/api.php (web is better)
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('admin.dashboard');
 });
 
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [LoginController::class, 'show'])->name('login');
+    Route::post('/login', [LoginController::class, 'login'])->name('login.store');
+});
 
+Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
 
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $request->fulfill();
-    return response()->json(['message' => 'Email verified.']);
-})->middleware(['auth:sanctum', 'signed'])->name('verification.verify');
+Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->middleware(['signed', 'throttle:auth-api'])
+    ->name('verification.verify');
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'role:superadmin|admin'])
+    ->group(function () {
+        Route::get('/', DashboardController::class)->name('dashboard');
+
+        Route::resource('services', ServiceController::class);
+        Route::resource('addons', ServiceAddOnController::class)->parameters(['addons' => 'serviceAddOn']);
+        Route::resource('pricing-rules', ServicePricingRuleController::class)->parameters(['pricing-rules' => 'servicePricingRule']);
+
+        Route::get('/providers', [ProviderController::class, 'index'])->name('providers.index');
+        Route::get('/providers/{provider}', [ProviderController::class, 'show'])->name('providers.show');
+        Route::post('/providers/{provider}/verification', [ProviderController::class, 'updateVerification'])->name('providers.verification.update');
+        Route::resource('users', UserController::class)->only(['index', 'edit', 'update', 'destroy']);
+
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
+        Route::get('/wallets', [WalletController::class, 'index'])->name('wallets.index');
+        Route::get('/wallets/{wallet}', [WalletController::class, 'show'])->name('wallets.show');
+        Route::post('/wallets/{wallet}/adjust', [WalletController::class, 'adjust'])->name('wallets.adjust');
+
+        Route::resource('commission-rules', CommissionRuleController::class)->parameters(['commission-rules' => 'commissionRule']);
+
+        Route::get('/disputes', [DisputeController::class, 'index'])->name('disputes.index');
+        Route::post('/disputes/{dispute}/resolve', [DisputeController::class, 'resolve'])->name('disputes.resolve');
+    });

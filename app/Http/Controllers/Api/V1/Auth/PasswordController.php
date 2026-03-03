@@ -1,62 +1,88 @@
 <?php
 
-// app/Http/Controllers/Api/V1/Auth/PasswordController.php
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
+use App\Http\Requests\Api\V1\Auth\ChangePasswordRequest;
+use App\Http\Requests\Api\V1\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Api\V1\Auth\ResetPasswordRequest;
+use App\Models\User;
+use App\Services\EmailOtpService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class PasswordController extends Controller
 {
-    public function forgot(Request $request)
+    public function __construct(private readonly EmailOtpService $emailOtpService) {}
+
+    public function forgot(ForgotPasswordRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'email' => ['required','email'],
-        ]);
+        $email = strtolower($request->validated('email'));
+        $user = User::query()->where('email', $email)->first();
 
-        $status = Password::sendResetLink(['email' => strtolower($data['email'])]);
-
-        if ($status !== Password::RESET_LINK_SENT) {
-            throw ValidationException::withMessages([
-                'email' => [__($status)],
-            ]);
+        if ($user !== null && ! $user->is_blocked) {
+            $otp = $this->emailOtpService->issue($user, 'password_reset');
+        } else {
+            $otp = [
+                'otp_token' => Str::random(40),
+                'expires_in' => 600,
+            ];
         }
 
-        return response()->json(['message' => 'Password reset link sent.']);
+        return response()->json([
+            'message' => 'If the email exists, a verification code was sent.',
+            'email' => $email,
+            ...$otp,
+        ], 202);
     }
 
-    public function reset(Request $request)
+    public function reset(ResetPasswordRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'token' => ['required','string'],
-            'email' => ['required','email'],
-            'password' => ['required','string','min:8','confirmed'],
-        ]);
+        $data = $request->validated();
 
-        $status = Password::reset(
-            [
-                'email' => strtolower($data['email']),
-                'password' => $data['password'],
-                'password_confirmation' => $request->input('password_confirmation'),
-                'token' => $data['token'],
-            ],
-            function ($user) use ($data) {
-                $user->forceFill([
-                    'password' => bcrypt($data['password']),
-                    'remember_token' => Str::random(60),
-                ])->save();
-            }
-        );
+        $record = $this->emailOtpService->verify($data['otp_token'], $data['code'], 'password_reset');
 
-        if ($status !== Password::PASSWORD_RESET) {
+        if ($record->user === null || strtolower($record->email) !== strtolower($data['email'])) {
             throw ValidationException::withMessages([
-                'email' => [__($status)],
+                'code' => ['Invalid or expired verification code.'],
             ]);
         }
 
+        $user = $record->user;
+
+        $user->forceFill([
+            'password' => $data['password'],
+            'remember_token' => Str::random(60),
+            'email_verified_at' => $user->email_verified_at ?? now(),
+        ])->save();
+
+        $user->tokens()->delete();
+        $user->refreshTokens()->update(['revoked_at' => now()]);
+
         return response()->json(['message' => 'Password reset successful.']);
+    }
+
+    public function change(ChangePasswordRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        $user = $request->user();
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Current password is incorrect.'],
+            ]);
+        }
+
+        $user->forceFill([
+            'password' => $data['password'],
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        $user->tokens()->delete();
+        $user->refreshTokens()->update(['revoked_at' => now()]);
+
+        return response()->json(['message' => 'Password updated successfully.']);
     }
 }

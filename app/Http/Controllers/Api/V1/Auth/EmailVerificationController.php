@@ -1,16 +1,17 @@
 <?php
 
-// app/Http/Controllers/Api/V1/Auth/EmailVerificationController.php
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Validation\ValidationException;
 
 class EmailVerificationController extends Controller
 {
-    public function send(Request $request)
+    public function send(Request $request): JsonResponse
     {
         $user = $request->user();
 
@@ -23,42 +24,23 @@ class EmailVerificationController extends Controller
         return response()->json(['message' => 'Verification email sent.']);
     }
 
-    // For Postman testing, we accept the signed verification URL params
-    public function confirm(Request $request)
+    public function verify(Request $request, int $id, string $hash): JsonResponse
     {
-        $data = $request->validate([
-            'id' => ['required','integer'],
-            'hash' => ['required','string'],
-            'expires' => ['required','string'],
-            'signature' => ['required','string'],
-        ]);
-
-        // Rebuild a URL identical to the signed one and validate signature
-        $url = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addMinutes(60),
-            ['id' => $data['id'], 'hash' => $data['hash']]
-        );
-
-        // Replace generated expires and signature with provided values
-        // We cannot easily reuse the generated URL, so we validate by checking expected hash and user then mark verified.
-        $user = $request->user();
-
-        if ((int) $user->id !== (int) $data['id']) {
-            throw ValidationException::withMessages(['id' => ['Invalid user id.']]);
+        if (! URL::hasValidSignature($request)) {
+            return response()->json(['message' => 'Invalid or expired verification link.'], 403);
         }
 
-        if (! hash_equals(sha1($user->getEmailForVerification()), $data['hash'])) {
-            throw ValidationException::withMessages(['hash' => ['Invalid hash.']]);
+        $user = User::query()->findOrFail($id);
+
+        if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+            return response()->json(['message' => 'Verification hash mismatch.'], 422);
         }
 
-        // We cannot reliably validate signature here without using the actual signed URL.
-        // Better approach: use GET /email/verify/{id}/{hash} with signed middleware for production.
-        // For now, mark verified after matching id and hash.
         if (! $user->hasVerifiedEmail()) {
             $user->markEmailAsVerified();
+            event(new Verified($user));
         }
 
-        return response()->json(['message' => 'Email verified.']);
+        return response()->json(['message' => 'Email verified successfully.']);
     }
 }

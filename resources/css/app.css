@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Sora:wght@600;700&display=swap');
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -6,6 +7,110 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Poppins', 'Segoe UI', sans-serif;
+    --font-display: 'Sora', 'Segoe UI', sans-serif;
+    --color-primary: #f28c28;
+    --color-primary-soft: #fff2e2;
+    --color-primary-dark: #d76a08;
+    --color-surface: #ffffff;
+    --color-border: #f1e7dd;
+    --color-ink: #1f2937;
+    --color-ink-soft: #6b7280;
+}
+
+@layer base {
+    body {
+        @apply bg-[#fffdf9] text-[#1f2937] antialiased;
+    }
+
+    h1,
+    h2,
+    h3 {
+        @apply font-semibold tracking-tight text-[#1f2937];
+    }
+
+    table {
+        @apply w-full border-collapse;
+    }
+
+    th,
+    td {
+        @apply border-b border-[#f1e7dd] px-4 py-3 text-left text-sm;
+    }
+
+    th {
+        @apply text-xs font-semibold uppercase tracking-[0.12em] text-[#8b7d72];
+    }
+
+    input,
+    select,
+    textarea {
+        @apply w-full rounded-xl border border-[#f1e7dd] bg-white px-3 py-2.5 text-sm text-[#1f2937] outline-none transition placeholder:text-[#9ca3af] focus:border-[#f28c28]/70 focus:ring-2 focus:ring-[#f28c28]/20;
+    }
+
+    label {
+        @apply mb-1 block text-xs font-medium uppercase tracking-[0.08em] text-[#8b7d72];
+    }
+}
+
+@layer components {
+    .admin-shell {
+        @apply relative min-h-screen bg-[radial-gradient(circle_at_10%_0%,rgba(242,140,40,0.18),transparent_35%),radial-gradient(circle_at_80%_5%,rgba(245,158,11,0.12),transparent_40%),#fffdf9];
+    }
+
+    .admin-sidebar {
+        @apply fixed inset-y-3 left-3 z-50 flex w-72 flex-col rounded-3xl border border-[#f1e7dd] bg-white p-4 shadow-[0_35px_60px_rgba(31,41,55,0.08)] transition-transform duration-300 md:inset-y-4 md:left-4;
+    }
+
+    .admin-main {
+        @apply min-h-screen p-4 pb-8 md:pl-[20rem] md:pr-6 md:pt-4;
+    }
+
+    .admin-panel {
+        @apply rounded-3xl border border-[#f1e7dd] bg-white p-5 shadow-[0_18px_48px_rgba(31,41,55,0.08)];
+    }
+
+    .admin-nav-link {
+        @apply flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-medium text-[#6b7280] transition hover:border-[#f1e7dd] hover:bg-[#fff2e2] hover:text-[#1f2937];
+    }
+
+    .admin-nav-link-active {
+        @apply border-[#f1e7dd] bg-[#fff2e2] text-[#1f2937];
+    }
+
+    .admin-icon {
+        @apply h-4 w-4 text-[#f28c28];
+    }
+
+    .admin-card {
+        @apply rounded-2xl border border-[#f1e7dd] bg-white p-5 shadow-[0_18px_40px_rgba(31,41,55,0.06)];
+    }
+
+    .admin-card-label {
+        @apply text-xs font-medium uppercase tracking-[0.12em] text-[#8b7d72];
+    }
+
+    .admin-card-value {
+        @apply mt-3 font-display text-4xl leading-none text-[#1f2937];
+    }
+
+    .admin-card-meta {
+        @apply mt-2 text-xs text-[#6b7280];
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#f28c28]/40 bg-[#f28c28] px-4 py-2 text-sm font-medium text-white transition hover:border-[#d76a08] hover:bg-[#d76a08];
+    }
+
+    .btn-light {
+        @apply border-[#f1e7dd] bg-white text-[#1f2937] hover:bg-[#fff2e2];
+    }
+
+    .status {
+        @apply mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700;
+    }
+
+    .actions {
+        @apply flex flex-wrap items-center gap-2;
+    }
 }
