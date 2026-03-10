@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class GoogleAuthRequest extends FormRequest
 {
@@ -17,6 +18,7 @@ class GoogleAuthRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'app_type' => ['required', Rule::in(['customer', 'provider'])],
             'id_token' => ['required', 'string', 'min:20'],
         ];
     }

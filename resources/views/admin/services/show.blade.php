@@ -2,8 +2,11 @@
 
 @section('content')
 <h1>{{ $service->name }}</h1>
+<p>Category: {{ $service->category?->name ?? '—' }}</p>
 <p>Slug: {{ $service->slug }}</p>
-<p>Price: {{ number_format($service->base_price_amount) }} {{ $service->currency }}</p>
+<p>Icon Name: {{ $service->icon_name }}</p>
+<p>From Price: {{ number_format($service->base_price_amount) }} {{ $service->currency }}</p>
+<p>Featured: {{ $service->is_featured ? 'Yes' : 'No' }}</p>
 <p>Status: {{ $service->is_active ? 'Active' : 'Inactive' }}</p>
 <div class="actions">
     <a class="btn" href="{{ route('admin.services.edit', $service) }}">Edit</a>
@@ -13,6 +16,17 @@
         <button type="submit" class="btn btn-light">Delete</button>
     </form>
 </div>
+<h3>Service Tiers</h3>
+<table><thead><tr><th>Name</th><th>Price</th><th>Status</th><th>Sort</th></tr></thead><tbody>
+@foreach($service->tiers as $tier)
+<tr>
+    <td>{{ $tier->name }}</td>
+    <td>{{ number_format($tier->price_amount) }} {{ $service->currency }}</td>
+    <td>{{ $tier->is_active ? 'Active' : 'Inactive' }}</td>
+    <td>{{ $tier->sort_order }}</td>
+</tr>
+@endforeach
+</tbody></table>
 <h3>Add-ons</h3>
 <table><thead><tr><th>Name</th><th>Price</th></tr></thead><tbody>
 @foreach($service->addOns as $addOn)

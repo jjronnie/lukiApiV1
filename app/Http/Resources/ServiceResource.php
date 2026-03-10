@@ -16,11 +16,22 @@ class ServiceResource extends JsonResource
             'public_id' => $this->public_id,
             'slug' => $this->slug,
             'name' => $this->name,
+            'icon_name' => $this->icon_name,
             'description' => $this->description,
             'currency' => $this->currency,
             'base_price_amount' => $this->base_price_amount,
+            'starting_price_amount' => $this->base_price_amount,
             'duration_minutes' => $this->duration_minutes,
             'is_active' => $this->is_active,
+            'is_featured' => $this->is_featured,
+            'tiers' => $this->whenLoaded(
+                'tiers',
+                fn () => ServiceTierResource::collection($this->tiers)
+            ),
+            'category' => $this->whenLoaded(
+                'category',
+                fn () => $this->category === null ? null : new ServiceCategoryResource($this->category)
+            ),
         ];
     }
 }

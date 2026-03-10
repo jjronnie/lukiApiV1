@@ -6,6 +6,7 @@ use App\Enums\PricingRuleType;
 use App\Models\Promotion;
 use App\Models\Service;
 use App\Models\ServicePricingRule;
+use App\Models\ServiceTier;
 
 class PriceEstimateService
 {
@@ -13,11 +14,18 @@ class PriceEstimateService
      * @param  array<int, int>  $addOnIds
      * @return array<string, mixed>
      */
-    public function estimate(Service $service, array $addOnIds, float $distanceKm, int $serviceMinutes, ?string $promoCode = null): array
+    public function estimate(
+        Service $service,
+        ServiceTier $serviceTier,
+        array $addOnIds,
+        float $distanceKm,
+        int $serviceMinutes,
+        ?string $promoCode = null,
+    ): array
     {
         $addOns = $service->addOns()->whereIn('id', $addOnIds)->where('is_active', true)->get();
 
-        $baseAmount = $service->base_price_amount;
+        $baseAmount = $serviceTier->price_amount;
         $addOnsAmount = (int) $addOns->sum('price_amount');
 
         $distanceFee = 0;
@@ -77,7 +85,11 @@ class PriceEstimateService
         $total = max(0, $subtotal + $taxAmount - $discountAmount);
 
         return [
+            'service_public_id' => $service->public_id,
+            'service_tier_public_id' => $serviceTier->public_id,
             'subtotal_amount' => $subtotal,
+            'base_service_amount' => $baseAmount,
+            'addons_amount' => $addOnsAmount,
             'distance_fee_amount' => $distanceFee,
             'peak_fee_amount' => $peakFee,
             'overtime_fee_amount' => $overtimeFee,
@@ -85,9 +97,14 @@ class PriceEstimateService
             'discount_amount' => $discountAmount,
             'total_amount' => $total,
             'currency' => $service->currency,
+            'tier' => [
+                'name' => $serviceTier->name,
+                'amount' => $baseAmount,
+            ],
             'items' => [
                 'base' => [
                     'label' => $service->name,
+                    'tier_name' => $serviceTier->name,
                     'amount' => $baseAmount,
                 ],
                 'addons' => $addOns->map(fn ($addOn) => [

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class VerifyLoginOtpRequest extends FormRequest
 {
@@ -17,7 +18,8 @@ class VerifyLoginOtpRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email'],
+            'app_type' => ['required', Rule::in(['customer', 'provider'])],
+            'email' => ['nullable', 'email'],
             'otp_token' => ['required', 'string', 'min:20'],
             'code' => ['required', 'digits:6'],
         ];

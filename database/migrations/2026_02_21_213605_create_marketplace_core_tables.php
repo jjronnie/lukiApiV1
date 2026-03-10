@@ -8,14 +8,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('referral_code', 24)->nullable()->unique()->after('phone');
+        Schema::create('service_categories', function (Blueprint $table) {
+            $table->id();
+            $table->ulid('public_id')->unique();
+            $table->string('name', 120);
+            $table->string('slug', 160)->unique();
+            $table->string('icon_name', 80);
+            $table->boolean('is_active')->default(true)->index();
+            $table->unsignedSmallInteger('sort_order')->default(0);
+            $table->timestampsTz();
         });
 
         Schema::create('provider_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
             $table->ulid('public_id')->unique();
+            $table->unsignedInteger('provider_number')->nullable()->unique();
             $table->string('provider_type', 32)->default('individual');
             $table->string('display_name', 120);
             $table->string('legal_name', 160)->nullable();
@@ -48,13 +56,16 @@ return new class extends Migration
         Schema::create('services', function (Blueprint $table) {
             $table->id();
             $table->ulid('public_id')->unique();
+            $table->foreignId('service_category_id')->nullable()->constrained('service_categories')->nullOnDelete();
             $table->string('slug')->unique();
             $table->string('name', 120);
+            $table->string('icon_name', 80)->nullable();
             $table->text('description')->nullable();
             $table->string('currency', 3)->default('UGX');
             $table->integer('base_price_amount');
             $table->unsignedSmallInteger('duration_minutes')->default(60);
             $table->boolean('is_active')->default(true)->index();
+            $table->boolean('is_featured')->default(false)->index();
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestampsTz();
         });
@@ -85,6 +96,22 @@ return new class extends Migration
             $table->index(['service_id', 'rule_type', 'is_active']);
         });
 
+        Schema::create('service_tiers', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('service_id')->constrained()->cascadeOnDelete();
+            $table->ulid('public_id')->unique();
+            $table->string('name', 80);
+            $table->string('slug', 120);
+            $table->integer('price_amount');
+            $table->text('description')->nullable();
+            $table->boolean('is_active')->default(true)->index();
+            $table->unsignedSmallInteger('sort_order')->default(0);
+            $table->timestampsTz();
+
+            $table->unique(['service_id', 'slug']);
+            $table->index(['service_id', 'is_active', 'sort_order']);
+        });
+
         Schema::create('provider_services', function (Blueprint $table) {
             $table->id();
             $table->foreignId('provider_profile_id')->constrained()->cascadeOnDelete();
@@ -93,6 +120,16 @@ return new class extends Migration
             $table->timestampsTz();
 
             $table->unique(['provider_profile_id', 'service_id']);
+        });
+
+        Schema::create('provider_service_tiers', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('provider_service_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('service_tier_id')->constrained()->cascadeOnDelete();
+            $table->boolean('is_active')->default(true);
+            $table->timestampsTz();
+
+            $table->unique(['provider_service_id', 'service_tier_id'], 'pst_provider_tier_unique');
         });
 
         Schema::create('provider_availabilities', function (Blueprint $table) {
@@ -151,7 +188,13 @@ return new class extends Migration
             $table->ulid('public_id')->unique();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('provider_profile_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('service_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('service_tier_id')->nullable()->constrained()->nullOnDelete();
             $table->string('status', 32)->default('created')->index();
+            $table->string('booking_mode', 16)->default('normal')->index();
+            $table->unsignedInteger('pair_provider_number')->nullable()->index();
+            $table->string('service_name_snapshot', 120)->nullable();
+            $table->string('service_tier_name_snapshot', 120)->nullable();
 
             $table->boolean('is_scheduled')->default(false);
             $table->timestampTz('scheduled_at')->nullable()->index();
@@ -204,8 +247,10 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->string('item_type', 24);
             $table->foreignId('service_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('service_tier_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('add_on_id')->nullable()->constrained('service_add_ons')->nullOnDelete();
             $table->string('name_snapshot', 120);
+            $table->string('tier_name_snapshot', 120)->nullable();
             $table->integer('unit_price_amount');
             $table->unsignedInteger('quantity')->default(1);
             $table->integer('line_total_amount');
@@ -343,16 +388,14 @@ return new class extends Migration
         Schema::dropIfExists('wallets');
         Schema::dropIfExists('provider_locations');
         Schema::dropIfExists('provider_availabilities');
+        Schema::dropIfExists('provider_service_tiers');
         Schema::dropIfExists('provider_services');
+        Schema::dropIfExists('service_tiers');
         Schema::dropIfExists('service_pricing_rules');
         Schema::dropIfExists('service_add_ons');
         Schema::dropIfExists('services');
+        Schema::dropIfExists('service_categories');
         Schema::dropIfExists('provider_documents');
         Schema::dropIfExists('provider_profiles');
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropUnique('users_referral_code_unique');
-            $table->dropColumn('referral_code');
-        });
     }
 };

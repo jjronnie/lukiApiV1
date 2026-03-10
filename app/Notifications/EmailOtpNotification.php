@@ -51,6 +51,7 @@ class EmailOtpNotification extends Notification
             ->line('Use the 6-digit code below to complete your request.')
             ->line("Code: {$this->code}")
             ->line("This code expires in {$this->expiresInMinutes} minutes.")
+            ->line('Please also check your spam or junk folder if you do not see this email in your inbox.')
             ->line('If you did not request this code, you can ignore this email.');
     }
 

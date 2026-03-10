@@ -32,11 +32,19 @@ class User extends Authenticatable implements MustVerifyEmail
         'public_id',
         'name',
         'email',
+        'email_verified_at',
+        'google_id',
+        'signup_method',
         'password',
         'phone',
+        'phone_country_code',
+        'phone_local_number',
         'referral_code',
+        'heard_about_source',
+        'heard_about_other',
         'phone_verified_at',
         'last_seen_at',
+        'profile_completed_at',
         'is_blocked',
     ];
 
@@ -60,6 +68,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'phone_verified_at' => 'datetime',
             'last_seen_at' => 'datetime',
+            'profile_completed_at' => 'datetime',
             'is_blocked' => 'boolean',
             'password' => 'hashed',
         ];
@@ -78,5 +87,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function refreshTokens(): HasMany
     {
         return $this->hasMany(RefreshToken::class);
+    }
+
+    public function identityVerification(): HasOne
+    {
+        return $this->hasOne(UserIdentityVerification::class);
     }
 }

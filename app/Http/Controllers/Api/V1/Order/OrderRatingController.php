@@ -51,7 +51,7 @@ class OrderRatingController extends Controller
 
         return response()->json([
             'message' => 'Rating submitted.',
-            'order' => new OrderResource($order->fresh(['items', 'providerProfile'])),
+            'order' => new OrderResource($order->fresh(['items', 'providerProfile', 'service.category', 'serviceTier'])),
         ]);
     }
 }

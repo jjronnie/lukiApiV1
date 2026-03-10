@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Provider;
 
 use App\Enums\ProviderVerificationStatus;
-use App\Enums\RoleName;
 use App\Enums\WalletStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Provider\UpsertProviderProfileRequest;
@@ -36,8 +35,7 @@ class ProviderProfileController extends Controller
             $servicePublicIds = $data['service_public_ids'] ?? [];
             if ($servicePublicIds !== []) {
                 $serviceIds = Service::query()->whereIn('public_id', $servicePublicIds)->pluck('id')->all();
-                $syncData = collect($serviceIds)->mapWithKeys(fn (int $id) => [$id => ['is_active' => true]])->all();
-                $profile->services()->sync($syncData);
+                $profile->syncServiceEligibility($serviceIds);
             }
 
             Wallet::query()->firstOrCreate(
@@ -54,13 +52,10 @@ class ProviderProfileController extends Controller
             return $profile;
         });
 
-        if (! $user->hasRole(RoleName::Provider->value)) {
-            $user->assignRole(RoleName::Provider->value);
-        }
-
         return response()->json([
             'provider_profile' => [
                 'public_id' => $profile->public_id,
+                'provider_number' => $profile->provider_number,
                 'display_name' => $profile->display_name,
                 'verification_status' => $profile->verification_status?->value ?? $profile->verification_status,
             ],

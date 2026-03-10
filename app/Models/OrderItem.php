@@ -11,8 +11,10 @@ class OrderItem extends Model
         'order_id',
         'item_type',
         'service_id',
+        'service_tier_id',
         'add_on_id',
         'name_snapshot',
+        'tier_name_snapshot',
         'unit_price_amount',
         'quantity',
         'line_total_amount',
@@ -43,5 +45,10 @@ class OrderItem extends Model
     public function addOn(): BelongsTo
     {
         return $this->belongsTo(ServiceAddOn::class, 'add_on_id');
+    }
+
+    public function serviceTier(): BelongsTo
+    {
+        return $this->belongsTo(ServiceTier::class);
     }
 }

@@ -15,10 +15,12 @@ class RolesAndPermissionsSeeder extends Seeder
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $permissions = [
+            'manage service categories',
             'manage services',
             'manage pricing rules',
             'manage users',
             'verify providers',
+            'review user identity verifications',
             'manage wallets',
             'manage commission rules',
             'resolve disputes',

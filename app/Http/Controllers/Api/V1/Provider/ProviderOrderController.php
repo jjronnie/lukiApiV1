@@ -122,7 +122,7 @@ class ProviderOrderController extends Controller
 
         $responseBody = [
             'message' => 'Order status updated.',
-            'order' => (new OrderResource($order->load(['items', 'providerProfile'])))->resolve(),
+            'order' => (new OrderResource($order->load(['items', 'providerProfile', 'service.category', 'serviceTier'])))->resolve(),
         ];
 
         if ($idempotencyKey !== null) {

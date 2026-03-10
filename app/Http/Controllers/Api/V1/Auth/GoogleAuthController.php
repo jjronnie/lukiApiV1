@@ -2,78 +2,147 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Enums\MobileAppType;
 use App\Enums\RoleName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\GoogleAuthRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Services\EmailOtpService;
-use Illuminate\Http\Client\ConnectionException;
+use App\Services\AuthTokenService;
+use Google\Client as GoogleClient;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class GoogleAuthController extends Controller
 {
     public function __construct(
-        private readonly EmailOtpService $emailOtpService,
+        private readonly AuthTokenService $authTokenService,
     ) {}
 
-    /**
-     * @throws ConnectionException
-     */
     public function login(GoogleAuthRequest $request): JsonResponse
     {
+        $appType = MobileAppType::fromRequest($request);
         $idToken = $request->validated('id_token');
+        $clientId = trim((string) config('services.google.client_id'));
 
-        $googleResponse = Http::timeout(10)
-            ->acceptJson()
-            ->get('https://oauth2.googleapis.com/tokeninfo', ['id_token' => $idToken]);
+        if ($clientId === '') {
+            return response()->json([
+                'message' => 'Google sign-in is not configured on the server.',
+            ], 500);
+        }
 
-        if (! $googleResponse->successful()) {
+        $payload = (new GoogleClient(['client_id' => $clientId]))->verifyIdToken($idToken);
+
+        if (! is_array($payload) || ($payload['aud'] ?? null) !== $clientId) {
             throw ValidationException::withMessages([
-                'id_token' => ['Google token could not be verified.'],
+                'id_token' => ['The Google sign-in token is invalid.'],
             ]);
         }
 
-        $payload = $googleResponse->json();
         $email = strtolower((string) ($payload['email'] ?? ''));
+        $googleId = trim((string) ($payload['sub'] ?? ''));
+        $emailVerified = $payload['email_verified'] ?? false;
 
-        if ($email === '' || (string) ($payload['email_verified'] ?? '') !== 'true') {
+        if ($googleId === '' || $email === '') {
+            throw ValidationException::withMessages([
+                'id_token' => ['The Google sign-in token is invalid.'],
+            ]);
+        }
+
+        if ($emailVerified !== true && (string) $emailVerified !== 'true') {
             throw ValidationException::withMessages([
                 'id_token' => ['Google account email is not verified.'],
             ]);
         }
 
-        $user = User::query()->firstOrCreate(
-            ['email' => $email],
-            [
-                'name' => (string) ($payload['name'] ?? explode('@', $email)[0]),
-                'password' => Hash::make(bin2hex(random_bytes(20))),
-                'email_verified_at' => now(),
-            ]
-        );
+        $name = trim((string) ($payload['name'] ?? ''));
+        if ($name === '') {
+            $name = Str::of($email)->before('@')->replace('.', ' ')->title()->value();
+        }
 
-        if ($user->hasAnyRole([RoleName::Superadmin->value, RoleName::Admin->value])) {
+        $user = User::query()->where('google_id', $googleId)->first();
+
+        if ($user === null) {
+            $user = User::query()->where('email', $email)->first();
+
+            if ($user !== null) {
+                $user->forceFill([
+                    'google_id' => $googleId,
+                    'signup_method' => 'google',
+                    'email_verified_at' => $user->email_verified_at ?? now(),
+                ])->save();
+            }
+        }
+
+        if ($user === null) {
+            $user = User::query()->create([
+                'name' => $name,
+                'email' => $email,
+                'google_id' => $googleId,
+                'signup_method' => 'google',
+                'email_verified_at' => now(),
+                'password' => Str::random(15),
+            ]);
+            $user->assignRole($appType->registrationRole());
+        } elseif (! $user->hasAnyRole([
+            RoleName::User->value,
+            RoleName::Provider->value,
+            RoleName::Admin->value,
+            RoleName::Superadmin->value,
+        ])) {
+            $user->assignRole($appType->registrationRole());
+        }
+
+        if ($user->is_blocked) {
+            throw ValidationException::withMessages([
+                'email' => ['This account is blocked.'],
+            ]);
+        }
+
+        if ($error = $this->mobileAccessErrorResponse($user, $appType)) {
+            return $error;
+        }
+
+        $user->forceFill([
+            'google_id' => $user->google_id ?: $googleId,
+            'signup_method' => 'google',
+            'email_verified_at' => $user->email_verified_at ?? now(),
+            'last_seen_at' => now(),
+        ])->save();
+
+        $tokens = $this->authTokenService->issue($user, $request);
+        $user->load($this->userRelations());
+
+        return response()->json([
+            ...$tokens,
+            'user' => new UserResource($user),
+            'roles' => $user->roles->pluck('name')->values(),
+        ]);
+    }
+
+    private function mobileAccessErrorResponse(User $user, MobileAppType $appType): ?JsonResponse
+    {
+        if (! $appType->allows($user)) {
             return response()->json([
-                'message' => 'Admin accounts can only sign in on the web portal.',
+                'message' => 'This account is not allowed in this application.',
             ], 403);
         }
 
-        if (! $user->hasRole(RoleName::User->value)) {
-            $user->assignRole(RoleName::User->value);
-        }
+        return null;
+    }
 
-        if (! $user->hasVerifiedEmail()) {
-            $user->forceFill(['email_verified_at' => now()])->save();
-        }
-
-        $otp = $this->emailOtpService->issue($user, 'login');
-
-        return response()->json([
-            'message' => 'Verification code sent to email.',
-            'email' => $user->email,
-            ...$otp,
-        ], 202);
+    /**
+     * @return array<int, string>
+     */
+    private function userRelations(): array
+    {
+        return [
+            'roles',
+            'identityVerification',
+            'providerProfile',
+            'providerProfile.providerServices.service.category',
+            'providerProfile.providerServices.eligibleTiers',
+        ];
     }
 }

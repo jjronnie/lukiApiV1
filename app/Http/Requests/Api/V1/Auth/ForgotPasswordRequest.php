@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ForgotPasswordRequest extends FormRequest
 {
@@ -17,6 +18,7 @@ class ForgotPasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'app_type' => ['required', Rule::in(['customer', 'provider'])],
             'email' => ['required', 'email'],
         ];
     }

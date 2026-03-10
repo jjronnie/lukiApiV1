@@ -18,11 +18,22 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestampTz('email_verified_at')->nullable();
             $table->string('password');
+            $table->text('two_factor_secret')->nullable();
+            $table->text('two_factor_recovery_codes')->nullable();
+            $table->timestampTz('two_factor_confirmed_at')->nullable();
 
             $table->string('phone', 32)->nullable()->unique();
+            $table->string('phone_country_code', 8)->nullable();
+            $table->string('phone_local_number', 24)->nullable();
             $table->timestampTz('phone_verified_at')->nullable();
+            $table->string('referral_code', 24)->nullable()->unique();
             $table->timestampTz('last_seen_at')->nullable();
+            $table->timestampTz('profile_completed_at')->nullable();
+            $table->string('heard_about_source', 40)->nullable();
+            $table->string('heard_about_other', 120)->nullable();
             $table->boolean('is_blocked')->default(false);
+            $table->string('google_id')->nullable()->unique();
+            $table->string('signup_method', 24)->default('email');
 
             $table->softDeletesTz();
 

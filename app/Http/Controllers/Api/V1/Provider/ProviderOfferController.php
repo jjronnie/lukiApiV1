@@ -21,7 +21,7 @@ class ProviderOfferController extends Controller
         $profile = auth()->user()->providerProfile()->firstOrFail();
 
         $offers = OrderOffer::query()
-            ->with('order')
+            ->with(['order.user', 'order.service.category', 'order.serviceTier'])
             ->where('provider_profile_id', $profile->id)
             ->where('status', 'pending')
             ->where('expires_at', '>', now())
@@ -100,7 +100,7 @@ class ProviderOfferController extends Controller
 
         return response()->json([
             'message' => 'Offer accepted.',
-            'order' => new OrderResource($executed->load(['items', 'providerProfile'])),
+            'order' => new OrderResource($executed->load(['items', 'providerProfile', 'service.category', 'serviceTier'])),
         ]);
     }
 }

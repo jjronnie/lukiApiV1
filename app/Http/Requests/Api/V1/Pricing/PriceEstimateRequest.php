@@ -18,6 +18,7 @@ class PriceEstimateRequest extends FormRequest
     {
         return [
             'service_public_id' => ['required', 'string', 'exists:services,public_id'],
+            'service_tier_public_id' => ['required', 'string', 'exists:service_tiers,public_id'],
             'add_on_public_ids' => ['nullable', 'array'],
             'add_on_public_ids.*' => ['string', 'exists:service_add_ons,public_id'],
             'distance_km' => ['nullable', 'numeric', 'min:0'],

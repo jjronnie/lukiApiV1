@@ -14,7 +14,7 @@ class OrderController extends Controller
         $status = $request->string('status')->toString();
 
         $orders = Order::query()
-            ->with(['user', 'providerProfile'])
+            ->with(['user', 'providerProfile', 'service', 'serviceTier'])
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->latest()
             ->paginate(20);
@@ -28,7 +28,7 @@ class OrderController extends Controller
     public function show(Order $order): View
     {
         return view('admin.orders.show', [
-            'order' => $order->load(['items', 'statusHistories', 'user', 'providerProfile']),
+            'order' => $order->load(['items', 'statusHistories', 'user', 'providerProfile', 'service', 'serviceTier']),
         ]);
     }
 }

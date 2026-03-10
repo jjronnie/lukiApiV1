@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Order;
 
+use App\Enums\OrderBookingMode;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
@@ -10,12 +11,14 @@ use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\Service;
+use App\Models\ServiceTier;
 use App\Services\DispatchService;
 use App\Services\IdempotencyService;
 use App\Services\PriceEstimateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class UserOrderController extends Controller
 {
@@ -44,6 +47,32 @@ class UserOrderController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
+        $serviceTier = ServiceTier::query()
+            ->where('public_id', $data['service_tier_public_id'])
+            ->where('service_id', $service->id)
+            ->where('is_active', true)
+            ->first();
+
+        if ($serviceTier === null) {
+            throw ValidationException::withMessages([
+                'service_tier_public_id' => ['Selected service tier is invalid.'],
+            ]);
+        }
+
+        $pairProvider = null;
+        if (($data['booking_mode'] ?? OrderBookingMode::Normal->value) === OrderBookingMode::Pair->value) {
+            $providerNumber = (int) ($data['pair_provider_number'] ?? 0);
+            $resolution = $this->dispatchService->resolvePairProvider($service, $providerNumber);
+
+            if ($resolution['provider'] === null) {
+                throw ValidationException::withMessages([
+                    'pair_provider_number' => [$resolution['message'] ?? 'Provider pairing failed.'],
+                ]);
+            }
+
+            $pairProvider = $resolution['provider'];
+        }
+
         $addOnIds = $service->addOns()
             ->whereIn('public_id', $data['add_on_public_ids'] ?? [])
             ->pluck('id')
@@ -51,16 +80,25 @@ class UserOrderController extends Controller
 
         $breakdown = $this->priceEstimateService->estimate(
             service: $service,
+            serviceTier: $serviceTier,
             addOnIds: $addOnIds,
             distanceKm: (float) ($data['distance_km'] ?? 0),
             serviceMinutes: (int) ($data['service_minutes'] ?? $service->duration_minutes),
             promoCode: $data['promo_code'] ?? null,
         );
 
-        $order = DB::transaction(function () use ($request, $data, $service, $addOnIds, $breakdown) {
+        $order = DB::transaction(function () use ($request, $data, $service, $serviceTier, $addOnIds, $breakdown) {
             $order = Order::query()->create([
                 'user_id' => $request->user()->id,
+                'service_id' => $service->id,
+                'service_tier_id' => $serviceTier->id,
+                'service_name_snapshot' => $service->name,
+                'service_tier_name_snapshot' => $serviceTier->name,
                 'status' => OrderStatus::Created,
+                'booking_mode' => $data['booking_mode'],
+                'pair_provider_number' => ($data['booking_mode'] ?? OrderBookingMode::Normal->value) === OrderBookingMode::Pair->value
+                    ? (int) ($data['pair_provider_number'] ?? 0)
+                    : null,
                 'is_scheduled' => $data['is_scheduled'],
                 'scheduled_at' => $data['is_scheduled'] ? $data['scheduled_at'] : null,
                 'address_text' => $data['address_text'],
@@ -85,9 +123,11 @@ class UserOrderController extends Controller
                 'item_type' => 'service',
                 'service_id' => $service->id,
                 'name_snapshot' => $service->name,
-                'unit_price_amount' => $service->base_price_amount,
+                'service_tier_id' => $serviceTier->id,
+                'tier_name_snapshot' => $serviceTier->name,
+                'unit_price_amount' => $serviceTier->price_amount,
                 'quantity' => 1,
-                'line_total_amount' => $service->base_price_amount,
+                'line_total_amount' => $serviceTier->price_amount,
             ]);
 
             $addOns = $service->addOns()->whereIn('id', $addOnIds)->where('is_active', true)->get();
@@ -113,7 +153,9 @@ class UserOrderController extends Controller
             return $order;
         });
 
-        if (! $order->is_scheduled) {
+        $isPairBooking = (($data['booking_mode'] ?? OrderBookingMode::Normal->value) === OrderBookingMode::Pair->value);
+
+        if ($isPairBooking || ! $order->is_scheduled) {
             $fromStatus = $order->status;
             $order->update([
                 'status' => OrderStatus::Offering,
@@ -124,20 +166,36 @@ class UserOrderController extends Controller
                 'from_status' => $fromStatus->value,
                 'to_status' => OrderStatus::Offering->value,
                 'changed_by_user_id' => $request->user()->id,
-                'meta' => ['source' => 'dispatch_start'],
+                'meta' => [
+                    'source' => $isPairBooking ? 'pair_dispatch_start' : 'dispatch_start',
+                ],
                 'created_at' => now(),
             ]);
 
-            $this->dispatchService->offerInBatches(
-                $order,
-                (int) config('luki.dispatch.offer_batch_size', 3),
-                (int) config('luki.dispatch.offer_expiry_seconds', 15),
-            );
+            if ($isPairBooking && $pairProvider !== null) {
+                $this->dispatchService->offerPair(
+                    $order,
+                    $pairProvider,
+                    (int) config('luki.dispatch.offer_expiry_seconds', 30),
+                );
+            } else {
+                $this->dispatchService->offerInBatches(
+                    $order,
+                    (int) config('luki.dispatch.offer_batch_size', 3),
+                    (int) config('luki.dispatch.offer_expiry_seconds', 15),
+                );
+            }
         }
 
         $responseBody = [
             'message' => 'Order created.',
-            'order' => (new OrderResource($order->load(['items', 'statusHistories', 'providerProfile'])))->resolve(),
+            'order' => (new OrderResource($order->load([
+                'items',
+                'statusHistories',
+                'providerProfile',
+                'service.category',
+                'serviceTier',
+            ])))->resolve(),
         ];
 
         if ($idempotencyKey !== null) {
@@ -151,7 +209,7 @@ class UserOrderController extends Controller
     {
         $orders = Order::query()
             ->where('user_id', auth()->id())
-            ->with(['items', 'providerProfile'])
+            ->with(['items', 'providerProfile', 'service.category', 'serviceTier'])
             ->latest()
             ->paginate(20);
 
@@ -163,7 +221,7 @@ class UserOrderController extends Controller
         $order = Order::query()
             ->where('public_id', $publicId)
             ->where('user_id', auth()->id())
-            ->with(['items', 'providerProfile', 'statusHistories'])
+            ->with(['items', 'providerProfile', 'statusHistories', 'service.category', 'serviceTier'])
             ->firstOrFail();
 
         return new OrderResource($order);
@@ -174,7 +232,7 @@ class UserOrderController extends Controller
         $order = Order::query()
             ->where('public_id', $publicId)
             ->where('user_id', $request->user()->id)
-            ->with('providerProfile')
+            ->with(['providerProfile', 'service.category', 'serviceTier'])
             ->firstOrFail();
 
         if (in_array($order->status, [OrderStatus::Completed, OrderStatus::Cancelled, OrderStatus::Expired, OrderStatus::InService], true)) {
@@ -216,7 +274,7 @@ class UserOrderController extends Controller
 
         return response()->json([
             'message' => 'Order cancelled.',
-            'order' => new OrderResource($order->load(['items', 'providerProfile', 'statusHistories'])),
+            'order' => new OrderResource($order->load(['items', 'providerProfile', 'statusHistories', 'service.category', 'serviceTier'])),
         ]);
     }
 }

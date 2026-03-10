@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Enums\MobileAppType;
 use App\Enums\RoleName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\RefreshTokenRequest;
 use App\Http\Requests\Api\V1\Auth\RegisterRequest;
+use App\Http\Requests\Api\V1\Auth\ResendOtpRequest;
 use App\Http\Requests\Api\V1\Auth\VerifyEmailOtpRequest;
 use App\Http\Requests\Api\V1\Auth\VerifyLoginOtpRequest;
 use App\Http\Resources\UserResource;
@@ -30,6 +32,7 @@ class AuthController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $appType = MobileAppType::fromRequest($request);
 
         $name = $data['name']
             ?? Str::of($data['email'])->before('@')->replace('.', ' ')->title()->value();
@@ -41,13 +44,9 @@ class AuthController extends Controller
             'password' => $data['password'],
         ]);
 
-        $role = $data['register_as'] === 'provider'
-            ? RoleName::Provider->value
-            : RoleName::User->value;
+        $user->assignRole($appType->registrationRole());
 
-        $user->assignRole($role);
-
-        $otp = $this->emailOtpService->issue($user, 'email_verification');
+        $otp = $this->emailOtpService->issue($user, 'email_verification', $appType);
 
         return response()->json([
             'message' => 'Verification code sent to email.',
@@ -59,6 +58,7 @@ class AuthController extends Controller
     public function login(LoginRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $appType = MobileAppType::fromRequest($request);
 
         $user = User::query()->where('email', strtolower($data['email']))->first();
 
@@ -74,13 +74,11 @@ class AuthController extends Controller
             ]);
         }
 
-        if ($user->hasAnyRole([RoleName::Superadmin->value, RoleName::Admin->value])) {
-            return response()->json([
-                'message' => 'Admin accounts can only sign in on the web portal.',
-            ], 403);
+        if ($error = $this->mobileAccessErrorResponse($user, $appType)) {
+            return $error;
         }
 
-        $otp = $this->emailOtpService->issue($user, 'login');
+        $otp = $this->emailOtpService->issue($user, 'login', $appType);
 
         return response()->json([
             'message' => 'Verification code sent to email.',
@@ -91,6 +89,7 @@ class AuthController extends Controller
 
     public function refresh(RefreshTokenRequest $request): JsonResponse
     {
+        $appType = MobileAppType::fromRequest($request);
         $hash = hash('sha256', $request->validated('refresh_token'));
 
         $refreshToken = RefreshToken::query()->where('token_hash', $hash)->first();
@@ -114,37 +113,40 @@ class AuthController extends Controller
 
         $user = $refreshToken->user;
 
-        if ($user->hasAnyRole([RoleName::Superadmin->value, RoleName::Admin->value])) {
-            return response()->json([
-                'message' => 'Admin accounts can only sign in on the web portal.',
-            ], 403);
+        if ($error = $this->mobileAccessErrorResponse($user, $appType)) {
+            return $error;
         }
 
         $tokens = $this->authTokenService->issue($user, $request);
 
         return response()->json([
             ...$tokens,
-            'user' => new UserResource($user->load('roles')),
+            'user' => new UserResource($user->load($this->userRelations())),
         ]);
     }
 
     public function verifyEmailOtp(VerifyEmailOtpRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $appType = MobileAppType::fromRequest($request);
+        $email = strtolower((string) ($data['email'] ?? ''));
 
-        $record = $this->emailOtpService->verify($data['otp_token'], $data['code'], 'email_verification');
+        $record = $this->emailOtpService->verify(
+            $data['otp_token'],
+            $data['code'],
+            'email_verification',
+            $appType,
+        );
         $user = $record->user;
 
-        if ($user === null || strtolower($data['email']) !== strtolower($record->email)) {
+        if ($user === null || ($email !== '' && $email !== strtolower($record->email))) {
             throw ValidationException::withMessages([
                 'code' => ['Invalid or expired verification code.'],
             ]);
         }
 
-        if ($user->hasAnyRole([RoleName::Superadmin->value, RoleName::Admin->value])) {
-            return response()->json([
-                'message' => 'Admin accounts can only sign in on the web portal.',
-            ], 403);
+        if ($error = $this->mobileAccessErrorResponse($user, $appType)) {
+            return $error;
         }
 
         if (! $user->hasVerifiedEmail()) {
@@ -157,18 +159,25 @@ class AuthController extends Controller
 
         return response()->json([
             ...$tokens,
-            'user' => new UserResource($user->load('roles')),
+            'user' => new UserResource($user->load($this->userRelations())),
         ]);
     }
 
     public function verifyLoginOtp(VerifyLoginOtpRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $appType = MobileAppType::fromRequest($request);
+        $email = strtolower((string) ($data['email'] ?? ''));
 
-        $record = $this->emailOtpService->verify($data['otp_token'], $data['code'], 'login');
+        $record = $this->emailOtpService->verify(
+            $data['otp_token'],
+            $data['code'],
+            'login',
+            $appType,
+        );
         $user = $record->user;
 
-        if ($user === null || strtolower($data['email']) !== strtolower($record->email)) {
+        if ($user === null || ($email !== '' && $email !== strtolower($record->email))) {
             throw ValidationException::withMessages([
                 'code' => ['Invalid or expired verification code.'],
             ]);
@@ -180,10 +189,8 @@ class AuthController extends Controller
             ]);
         }
 
-        if ($user->hasAnyRole([RoleName::Superadmin->value, RoleName::Admin->value])) {
-            return response()->json([
-                'message' => 'Admin accounts can only sign in on the web portal.',
-            ], 403);
+        if ($error = $this->mobileAccessErrorResponse($user, $appType)) {
+            return $error;
         }
 
         if (! $user->hasVerifiedEmail()) {
@@ -196,14 +203,39 @@ class AuthController extends Controller
 
         return response()->json([
             ...$tokens,
-            'user' => new UserResource($user->load('roles')),
+            'user' => new UserResource($user->load($this->userRelations())),
         ]);
+    }
+
+    public function resendOtp(ResendOtpRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        $appType = MobileAppType::fromRequest($request);
+
+        $purpose = match ($data['purpose']) {
+            'register' => 'email_verification',
+            'login' => 'login',
+            default => 'password_reset',
+        };
+
+        $payload = $this->emailOtpService->resend(
+            $data['otp_token'],
+            $data['email'],
+            $purpose,
+            $appType,
+        );
+
+        return response()->json([
+            'message' => 'A new verification code was sent to your email.',
+            'email' => strtolower($data['email']),
+            ...$payload,
+        ], 202);
     }
 
     public function me(Request $request): JsonResponse
     {
         return response()->json([
-            'user' => new UserResource($request->user()->load('roles')),
+            'user' => new UserResource($request->user()->load($this->userRelations())),
         ]);
     }
 
@@ -234,5 +266,36 @@ class AuthController extends Controller
         }
 
         return response()->json(['message' => 'Logged out successfully.']);
+    }
+
+    private function mobileAccessErrorResponse(User $user, MobileAppType $appType): ?JsonResponse
+    {
+        if ($user->hasAnyRole([RoleName::Superadmin->value, RoleName::Admin->value])) {
+            return response()->json([
+                'message' => 'Admin and superadmin accounts can only sign in on the web portal.',
+            ], 403);
+        }
+
+        if (! $appType->allows($user)) {
+            return response()->json([
+                'message' => $appType->mismatchMessage(),
+            ], 403);
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function userRelations(): array
+    {
+        return [
+            'roles',
+            'identityVerification',
+            'providerProfile',
+            'providerProfile.providerServices.service.category',
+            'providerProfile.providerServices.eligibleTiers',
+        ];
     }
 }

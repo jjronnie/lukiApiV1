@@ -14,9 +14,13 @@ class EmailOtp extends Model
         'user_id',
         'email',
         'purpose',
+        'app_type',
         'otp_hash',
         'token_hash',
         'attempts',
+        'resend_count',
+        'last_sent_at',
+        'resend_window_started_at',
         'expires_at',
         'consumed_at',
     ];
@@ -29,6 +33,8 @@ class EmailOtp extends Model
         return [
             'expires_at' => 'datetime',
             'consumed_at' => 'datetime',
+            'last_sent_at' => 'datetime',
+            'resend_window_started_at' => 'datetime',
         ];
     }
 

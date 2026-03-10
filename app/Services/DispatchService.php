@@ -6,6 +6,7 @@ use App\Models\NotificationRecord;
 use App\Models\Order;
 use App\Models\OrderOffer;
 use App\Models\ProviderProfile;
+use App\Models\Service;
 use Illuminate\Support\Collection;
 
 class DispatchService
@@ -15,21 +16,28 @@ class DispatchService
      */
     public function eligibleProviders(Order $order): Collection
     {
-        $serviceId = $order->items()->where('item_type', 'service')->value('service_id');
+        $serviceId = $order->service_id;
+        $serviceTierId = $order->service_tier_id;
+
+        if ($serviceId === null || $serviceTierId === null) {
+            return collect();
+        }
 
         return ProviderProfile::query()
-            ->where('verification_status', 'approved')
             ->whereHas('providerServices', function ($query) use ($serviceId) {
-                $query->where('service_id', $serviceId)->where('is_active', true);
+                $query->where('service_id', $serviceId)
+                    ->where('is_active', true);
             })
-            ->whereHas('wallet', function ($query) {
-                $query->where('status', 'active')
-                    ->whereRaw('(balance_amount - hold_amount) >= min_required_amount');
+            ->whereHas('providerServices', function ($query) use ($serviceId, $serviceTierId) {
+                $query->where('service_id', $serviceId)
+                    ->where('is_active', true)
+                    ->whereHas('eligibleTiers', function ($tierQuery) use ($serviceTierId) {
+                        $tierQuery
+                            ->where('service_tiers.id', $serviceTierId)
+                            ->where('provider_service_tiers.is_active', true);
+                    });
             })
-            ->whereHas('availability', function ($query) {
-                $query->where('is_online', true)
-                    ->where('last_seen_at', '>=', now()->subMinutes(2));
-            })
+            ->eligibleForMarketplace()
             ->with(['availability', 'locations' => fn ($query) => $query->latest('recorded_at')->limit(1)])
             ->get()
             ->filter(fn (ProviderProfile $provider) => $this->isWithinSchedule($provider))
@@ -70,6 +78,101 @@ class DispatchService
             }
             $batchNo++;
         }
+    }
+
+    /**
+     * @return array{provider: ProviderProfile|null, message: string|null}
+     */
+    public function resolvePairProvider(Service $service, int $providerNumber): array
+    {
+        $provider = ProviderProfile::query()
+            ->where('provider_number', $providerNumber)
+            ->with([
+                'availability',
+                'wallet',
+                'providerServices' => fn ($query) => $query
+                    ->where('service_id', $service->id)
+                    ->where('is_active', true),
+            ])
+            ->first();
+
+        if ($provider === null) {
+            return [
+                'provider' => null,
+                'message' => 'No provider was found with that number.',
+            ];
+        }
+
+        if ($provider->verification_status?->value !== 'approved'
+            && $provider->verification_status !== 'approved') {
+            return [
+                'provider' => null,
+                'message' => 'This provider is not approved to receive bookings right now.',
+            ];
+        }
+
+        if ($provider->providerServices->isEmpty()) {
+            return [
+                'provider' => null,
+                'message' => 'This provider does not offer the selected service.',
+            ];
+        }
+
+        if ($provider->wallet === null
+            || (($provider->wallet->status?->value ?? $provider->wallet->status) !== 'active')
+            || ($provider->wallet->balance_amount - $provider->wallet->hold_amount) < $provider->wallet->min_required_amount) {
+            return [
+                'provider' => null,
+                'message' => 'This provider is currently unavailable.',
+            ];
+        }
+
+        if ($provider->availability === null
+            || ! $provider->availability->is_online
+            || $provider->availability->last_seen_at === null
+            || $provider->availability->last_seen_at->lt(now()->subMinutes(2))) {
+            return [
+                'provider' => null,
+                'message' => 'This provider is unavailable right now.',
+            ];
+        }
+
+        if (! $this->isWithinSchedule($provider)) {
+            return [
+                'provider' => null,
+                'message' => 'This provider is outside their working hours right now.',
+            ];
+        }
+
+        return [
+            'provider' => $provider,
+            'message' => null,
+        ];
+    }
+
+    public function offerPair(Order $order, ProviderProfile $provider, int $expirySeconds = 30): void
+    {
+        OrderOffer::query()->create([
+            'order_id' => $order->id,
+            'provider_profile_id' => $provider->id,
+            'batch_no' => 1,
+            'status' => 'pending',
+            'expires_at' => now()->addSeconds($expirySeconds),
+            'meta' => [
+                'dispatch_mode' => 'pair',
+                'provider_number' => $provider->provider_number,
+            ],
+            'created_at' => now(),
+        ]);
+
+        NotificationRecord::query()->create([
+            'provider_profile_id' => $provider->id,
+            'user_id' => $provider->user_id,
+            'type' => 'dispatch.offer.pair',
+            'title' => 'Direct pair request',
+            'body' => 'A customer requested you directly by your provider number.',
+            'payload' => ['order_public_id' => $order->public_id],
+        ]);
     }
 
     private function scoreProvider(ProviderProfile $provider, ?Order $order = null): float

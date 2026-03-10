@@ -1,0 +1,84 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Enums\AuditAction;
+use App\Enums\UserIdentityVerificationStatus;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ReviewUserIdentityVerificationRequest;
+use App\Models\UserIdentityVerification;
+use App\Services\AuditLogService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\View\View;
+
+class UserIdentityVerificationController extends Controller
+{
+    public function __construct(private readonly AuditLogService $auditLogService) {}
+
+    public function index(Request $request): View
+    {
+        $status = trim((string) $request->input('status', ''));
+
+        return view('admin.user-identity-verifications.index', [
+            'verifications' => UserIdentityVerification::query()
+                ->with(['user', 'reviewer'])
+                ->when($status !== '', fn ($query) => $query->where('status', $status))
+                ->latest('submitted_at')
+                ->paginate(20)
+                ->withQueryString(),
+            'statusFilter' => $status,
+        ]);
+    }
+
+    public function show(UserIdentityVerification $verification): View
+    {
+        return view('admin.user-identity-verifications.show', [
+            'verification' => $verification->load(['user', 'reviewer']),
+        ]);
+    }
+
+    public function review(
+        ReviewUserIdentityVerificationRequest $request,
+        UserIdentityVerification $verification,
+    ): RedirectResponse {
+        $data = $request->validated();
+        $status = UserIdentityVerificationStatus::from($data['status']);
+
+        $verification->update([
+            'status' => $status,
+            'reviewed_by' => $request->user()?->id,
+            'reviewed_at' => now(),
+            'verified_at' => $status === UserIdentityVerificationStatus::Approved ? now() : null,
+            'rejection_reason' => $status === UserIdentityVerificationStatus::Rejected
+                ? ($data['rejection_reason'] ?? null)
+                : null,
+        ]);
+
+        $this->auditLogService->log(
+            action: $status === UserIdentityVerificationStatus::Approved
+                ? AuditAction::UserIdentityVerificationApproved->value
+                : AuditAction::UserIdentityVerificationRejected->value,
+            actor: $request->user(),
+            auditableType: UserIdentityVerification::class,
+            auditableId: $verification->id,
+            meta: ['status' => $status->value],
+            request: $request,
+        );
+
+        return redirect()
+            ->route('admin.user-identity-verifications.show', $verification)
+            ->with('status', 'User identity verification updated.');
+    }
+
+    public function media(UserIdentityVerification $verification, string $collection): BinaryFileResponse
+    {
+        abort_unless(in_array($collection, ['selfie', 'id_front', 'id_back'], true), 404);
+
+        $media = $verification->getFirstMedia($collection);
+        abort_if($media === null, 404);
+
+        return response()->file($media->getPath());
+    }
+}

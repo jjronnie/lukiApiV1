@@ -18,8 +18,7 @@ class ProviderServiceController extends Controller
             ->pluck('id')
             ->all();
 
-        $syncData = collect($serviceIds)->mapWithKeys(fn (int $id) => [$id => ['is_active' => true]])->all();
-        $profile->services()->sync($syncData);
+        $profile->syncServiceEligibility($serviceIds);
 
         return response()->json([
             'message' => 'Provider services updated.',

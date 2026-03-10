@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OrderBookingMode;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -18,7 +19,13 @@ class Order extends Model
         'public_id',
         'user_id',
         'provider_profile_id',
+        'service_id',
+        'service_tier_id',
+        'service_name_snapshot',
+        'service_tier_name_snapshot',
         'status',
+        'booking_mode',
+        'pair_provider_number',
         'is_scheduled',
         'scheduled_at',
         'offering_started_at',
@@ -85,6 +92,8 @@ class Order extends Model
             'rated_at' => 'datetime',
             'price_breakdown' => 'array',
             'status' => OrderStatus::class,
+            'booking_mode' => OrderBookingMode::class,
+            'pair_provider_number' => 'integer',
             'payment_method' => PaymentMethod::class,
             'payment_status' => PaymentStatus::class,
         ];
@@ -98,6 +107,16 @@ class Order extends Model
     public function providerProfile(): BelongsTo
     {
         return $this->belongsTo(ProviderProfile::class);
+    }
+
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
+    }
+
+    public function serviceTier(): BelongsTo
+    {
+        return $this->belongsTo(ServiceTier::class);
     }
 
     public function items(): HasMany

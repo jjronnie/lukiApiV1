@@ -10,7 +10,7 @@ it('validates auth register requires password confirmation', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $response = $this->postJson('/api/v1/auth/register', [
-        'register_as' => 'user',
+        'app_type' => 'customer',
         'name' => 'Test User',
         'email' => 'test-user@example.com',
         'password' => 'Password123',
@@ -21,10 +21,11 @@ it('validates auth register requires password confirmation', function () {
         ->assertJsonValidationErrors(['password']);
 });
 
-it('validates auth register requires register_as', function () {
+it('validates auth register requires app_type', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $response = $this->postJson('/api/v1/auth/register', [
+        'name' => 'Test User',
         'email' => 'test-user@example.com',
         'password' => 'Password123',
         'password_confirmation' => 'Password123',
@@ -32,11 +33,12 @@ it('validates auth register requires register_as', function () {
 
     $response
         ->assertStatus(422)
-        ->assertJsonValidationErrors(['register_as']);
+        ->assertJsonValidationErrors(['app_type']);
 });
 
 it('validates auth login requires email and password', function () {
     $response = $this->postJson('/api/v1/auth/login', [
+        'app_type' => 'customer',
         'password' => 'Password123',
     ]);
 
@@ -46,7 +48,9 @@ it('validates auth login requires email and password', function () {
 });
 
 it('validates auth refresh requires refresh token', function () {
-    $response = $this->postJson('/api/v1/auth/refresh', []);
+    $response = $this->postJson('/api/v1/auth/refresh', [
+        'app_type' => 'customer',
+    ]);
 
     $response
         ->assertStatus(422)
@@ -54,7 +58,9 @@ it('validates auth refresh requires refresh token', function () {
 });
 
 it('validates auth forgot password requires email', function () {
-    $response = $this->postJson('/api/v1/auth/password/forgot', []);
+    $response = $this->postJson('/api/v1/auth/password/forgot', [
+        'app_type' => 'customer',
+    ]);
 
     $response
         ->assertStatus(422)
@@ -63,6 +69,7 @@ it('validates auth forgot password requires email', function () {
 
 it('validates auth reset requires token and confirmation', function () {
     $response = $this->postJson('/api/v1/auth/password/reset', [
+        'app_type' => 'customer',
         'email' => 'test-user@example.com',
         'password' => 'Password123',
     ]);
@@ -73,7 +80,9 @@ it('validates auth reset requires token and confirmation', function () {
 });
 
 it('validates auth google login requires id token', function () {
-    $response = $this->postJson('/api/v1/auth/google', []);
+    $response = $this->postJson('/api/v1/auth/google', [
+        'app_type' => 'customer',
+    ]);
 
     $response
         ->assertStatus(422)
@@ -116,7 +125,7 @@ it('validates auth register otp verification fields', function () {
 
     $response
         ->assertStatus(422)
-        ->assertJsonValidationErrors(['email', 'otp_token', 'code']);
+        ->assertJsonValidationErrors(['app_type', 'email', 'otp_token', 'code']);
 });
 
 it('validates auth login otp verification fields', function () {
@@ -124,7 +133,15 @@ it('validates auth login otp verification fields', function () {
 
     $response
         ->assertStatus(422)
-        ->assertJsonValidationErrors(['email', 'otp_token', 'code']);
+        ->assertJsonValidationErrors(['app_type', 'email', 'otp_token', 'code']);
+});
+
+it('validates auth resend otp fields', function () {
+    $response = $this->postJson('/api/v1/auth/otp/resend', []);
+
+    $response
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['app_type', 'email', 'otp_token', 'purpose']);
 });
 
 it('validates order creation required fields', function () {
@@ -199,13 +216,26 @@ it('validates provider profile requires provider type and display name', functio
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
-    $user->assignRole(RoleName::User->value);
+    $user->assignRole(RoleName::Provider->value);
 
     $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/provider/profile', []);
 
     $response
         ->assertStatus(422)
         ->assertJsonValidationErrors(['provider_type', 'display_name']);
+});
+
+it('validates customer profile completion fields', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole(RoleName::User->value);
+
+    $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/customer/profile', []);
+
+    $response
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['phone_country_code', 'phone_local_number']);
 });
 
 it('validates provider documents require file and document type', function () {

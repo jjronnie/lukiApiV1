@@ -15,6 +15,8 @@ class OrderResource extends JsonResource
         return [
             'public_id' => $this->public_id,
             'status' => $this->status?->value ?? $this->status,
+            'booking_mode' => $this->booking_mode?->value ?? $this->booking_mode,
+            'pair_provider_number' => $this->pair_provider_number,
             'is_scheduled' => $this->is_scheduled,
             'scheduled_at' => $this->scheduled_at,
             'address_text' => $this->address_text,
@@ -30,6 +32,9 @@ class OrderResource extends JsonResource
                 'paid_at' => $this->paid_at,
             ],
             'amounts' => [
+                'currency' => data_get($this->price_breakdown, 'currency', $this->service?->currency ?? 'UGX'),
+                'base_amount' => data_get($this->price_breakdown, 'base_service_amount', 0),
+                'addons_amount' => data_get($this->price_breakdown, 'addons_amount', 0),
                 'subtotal_amount' => $this->subtotal_amount,
                 'distance_fee_amount' => $this->distance_fee_amount,
                 'overtime_fee_amount' => $this->overtime_fee_amount,
@@ -40,14 +45,27 @@ class OrderResource extends JsonResource
                 'total_amount' => $this->total_amount,
             ],
             'price_breakdown' => $this->price_breakdown,
+            'service' => [
+                'public_id' => $this->service?->public_id,
+                'name' => $this->service_name_snapshot ?? $this->service?->name,
+                'icon_name' => $this->service?->icon_name,
+                'category_name' => $this->service?->category?->name,
+            ],
+            'service_tier' => $this->service_tier_name_snapshot === null && $this->serviceTier === null ? null : [
+                'public_id' => $this->serviceTier?->public_id,
+                'name' => $this->service_tier_name_snapshot ?? $this->serviceTier?->name,
+                'price_amount' => $this->serviceTier?->price_amount ?? data_get($this->price_breakdown, 'base_service_amount'),
+            ],
             'provider' => $this->providerProfile !== null ? [
                 'public_id' => $this->providerProfile->public_id,
                 'display_name' => $this->providerProfile->display_name,
+                'provider_number' => $this->providerProfile->provider_number,
                 'rating_avg' => (float) $this->providerProfile->rating_avg,
             ] : null,
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item) => [
                 'item_type' => $item->item_type,
                 'name' => $item->name_snapshot,
+                'tier_name' => $item->tier_name_snapshot,
                 'unit_price_amount' => $item->unit_price_amount,
                 'quantity' => $item->quantity,
                 'line_total_amount' => $item->line_total_amount,

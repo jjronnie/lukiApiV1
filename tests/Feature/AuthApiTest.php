@@ -8,12 +8,13 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 
-it('registers, verifies otp, logs in and refreshes tokens', function () {
+it('registers, verifies otp, logs in and refreshes tokens for the customer app', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     Notification::fake();
 
     $registerResponse = $this->postJson('/api/v1/auth/register', [
-        'register_as' => 'user',
+        'app_type' => 'customer',
+        'name' => 'API User',
         'email' => 'api-user@example.com',
         'password' => 'Password123',
         'password_confirmation' => 'Password123',
@@ -24,6 +25,7 @@ it('registers, verifies otp, logs in and refreshes tokens', function () {
         ->assertJsonStructure([
             'otp_token',
             'expires_in',
+            'resend_available_in',
             'email',
         ]);
 
@@ -34,6 +36,7 @@ it('registers, verifies otp, logs in and refreshes tokens', function () {
     $registerNotification = Notification::sent($user, EmailOtpNotification::class)->first();
 
     $verifyResponse = $this->postJson('/api/v1/auth/register/verify', [
+        'app_type' => 'customer',
         'email' => $user->email,
         'otp_token' => $registerOtpToken,
         'code' => $registerNotification->code,
@@ -44,10 +47,11 @@ it('registers, verifies otp, logs in and refreshes tokens', function () {
         ->assertJsonStructure([
             'access_token',
             'refresh_token',
-            'user' => ['public_id', 'email'],
+            'user' => ['public_id', 'email', 'profile_completed_at'],
         ]);
 
     $loginResponse = $this->postJson('/api/v1/auth/login', [
+        'app_type' => 'customer',
         'email' => 'api-user@example.com',
         'password' => 'Password123',
     ]);
@@ -58,6 +62,7 @@ it('registers, verifies otp, logs in and refreshes tokens', function () {
     $loginNotification = Notification::sent($user, EmailOtpNotification::class)->last();
 
     $loginVerifyResponse = $this->postJson('/api/v1/auth/login/verify', [
+        'app_type' => 'customer',
         'email' => $user->email,
         'otp_token' => $loginOtpToken,
         'code' => $loginNotification->code,
@@ -71,6 +76,7 @@ it('registers, verifies otp, logs in and refreshes tokens', function () {
     expect(RefreshToken::query()->count())->toBeGreaterThan(0);
 
     $refreshResponse = $this->postJson('/api/v1/auth/refresh', [
+        'app_type' => 'customer',
         'refresh_token' => $refreshToken,
     ]);
 
@@ -88,6 +94,7 @@ it('blocks admin logins on the api', function () {
     $admin->assignRole(RoleName::Admin->value);
 
     $response = $this->postJson('/api/v1/auth/login', [
+        'app_type' => 'customer',
         'email' => $admin->email,
         'password' => 'Password123',
     ]);

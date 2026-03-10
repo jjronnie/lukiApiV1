@@ -70,6 +70,14 @@
                     </svg>
                     Services
                 </a>
+                <a href="{{ route('admin.service-categories.index') }}"
+                    class="admin-nav-link {{ request()->routeIs('admin.service-categories.*') ? 'admin-nav-link-active' : '' }}">
+                    <svg class="admin-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                            d="M4 4.75A1.75 1.75 0 0 1 5.75 3h2.5A1.75 1.75 0 0 1 10 4.75v2.5A1.75 1.75 0 0 1 8.25 9h-2.5A1.75 1.75 0 0 1 4 7.25v-2.5Zm6 0A1.75 1.75 0 0 1 11.75 3h2.5A1.75 1.75 0 0 1 16 4.75v2.5A1.75 1.75 0 0 1 14.25 9h-2.5A1.75 1.75 0 0 1 10 7.25v-2.5ZM4 11.75A1.75 1.75 0 0 1 5.75 10h2.5A1.75 1.75 0 0 1 10 11.75v2.5A1.75 1.75 0 0 1 8.25 16h-2.5A1.75 1.75 0 0 1 4 14.25v-2.5ZM11.5 10a.75.75 0 0 1 .75.75v1.19h1.19a.75.75 0 0 1 0 1.5h-1.19v1.19a.75.75 0 0 1-1.5 0v-1.19h-1.19a.75.75 0 0 1 0-1.5h1.19v-1.19A.75.75 0 0 1 11.5 10Z" />
+                    </svg>
+                    Categories
+                </a>
                 <a href="{{ route('admin.addons.index') }}"
                     class="admin-nav-link {{ request()->routeIs('admin.addons.*') ? 'admin-nav-link-active' : '' }}">
                     <svg class="admin-icon" viewBox="0 0 20 20" fill="currentColor">
@@ -101,6 +109,14 @@
                             d="M10 2.75a3.25 3.25 0 1 0 0 6.5 3.25 3.25 0 0 0 0-6.5ZM4.5 16a5.5 5.5 0 0 1 11 0v1.25H4.5V16Zm11-8.5a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Zm-1.515 1.322a4.983 4.983 0 0 1 2.765 4.428v1h-1.5v-1a3.49 3.49 0 0 0-1.67-2.973c.18-.45.315-.934.405-1.455Z" />
                     </svg>
                     Users
+                </a>
+                <a href="{{ route('admin.user-identity-verifications.index') }}"
+                    class="admin-nav-link {{ request()->routeIs('admin.user-identity-verifications.*') ? 'admin-nav-link-active' : '' }}">
+                    <svg class="admin-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                            d="M10 2.5 4.75 4.6v4.543c0 3.545 2.174 6.749 5.25 7.857 3.076-1.108 5.25-4.312 5.25-7.857V4.6L10 2.5Zm2.03 5.72a.75.75 0 1 1 1.06 1.06l-3.2 3.2a.75.75 0 0 1-1.06 0L7.24 10.9a.75.75 0 1 1 1.06-1.06l1.06 1.06 2.67-2.68Z" />
+                    </svg>
+                    Customer Verification
                 </a>
                 <a href="{{ route('admin.orders.index') }}"
                     class="admin-nav-link {{ request()->routeIs('admin.orders.*') ? 'admin-nav-link-active' : '' }}">
