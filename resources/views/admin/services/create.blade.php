@@ -18,6 +18,7 @@
     <label>Slug</label><input name="slug" value="{{ old('slug') }}" required>
     <label>Name</label><input name="name" value="{{ old('name') }}" required>
     <label>Icon Name</label><input name="icon_name" value="{{ old('icon_name') }}" required>
+    <label>Image URL</label><input name="image_url" value="{{ old('image_url') }}" placeholder="https://...">
     <label>Description</label><textarea name="description">{{ old('description') }}</textarea>
     <label>Currency</label><input name="currency" value="UGX" required>
     <label>Duration Minutes</label><input type="number" name="duration_minutes" value="{{ old('duration_minutes', 60) }}" required>

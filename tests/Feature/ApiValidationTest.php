@@ -157,9 +157,13 @@ it('validates order creation required fields', function () {
         ->assertStatus(422)
         ->assertJsonValidationErrors([
             'service_public_id',
+            'service_tier_public_id',
             'is_scheduled',
             'address_text',
+            'location_lat',
+            'location_lng',
             'payment_method',
+            'booking_mode',
         ]);
 });
 
@@ -170,9 +174,12 @@ it('validates order creation payment method enum', function () {
     $user->assignRole(RoleName::User->value);
 
     $service = Service::query()->firstOrFail();
+    $tier = $service->tiers()->where('is_active', true)->firstOrFail();
 
     $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/orders', [
         'service_public_id' => $service->public_id,
+        'service_tier_public_id' => $tier->public_id,
+        'booking_mode' => 'normal',
         'is_scheduled' => false,
         'address_text' => 'Kampala Road',
         'location_lat' => 0.3476,

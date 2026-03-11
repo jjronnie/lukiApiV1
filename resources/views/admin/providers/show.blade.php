@@ -7,6 +7,9 @@
 <p>Status: {{ $provider->verification_status->value ?? $provider->verification_status }}</p>
 <p>Availability: {{ $provider->availability?->is_online ? 'Online' : 'Offline' }}</p>
 <p>Wallet Balance: {{ number_format($provider->wallet?->balance_amount ?? 0) }}</p>
+@if($provider->avatar_url)
+    <p><img src="{{ $provider->avatar_url }}" alt="{{ $provider->display_name }}" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover;"></p>
+@endif
 
 <h3>Verification Action</h3>
 <form method="POST" action="{{ route('admin.providers.verification.update', $provider) }}">

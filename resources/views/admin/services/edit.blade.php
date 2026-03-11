@@ -18,6 +18,7 @@
     <label>Slug</label><input name="slug" value="{{ old('slug', $service->slug) }}" required>
     <label>Name</label><input name="name" value="{{ old('name', $service->name) }}" required>
     <label>Icon Name</label><input name="icon_name" value="{{ old('icon_name', $service->icon_name) }}" required>
+    <label>Image URL</label><input name="image_url" value="{{ old('image_url', $service->image_url) }}" placeholder="https://...">
     <label>Description</label><textarea name="description">{{ old('description', $service->description) }}</textarea>
     <label>Currency</label><input name="currency" value="{{ old('currency', $service->currency) }}" required>
     <label>Duration Minutes</label><input type="number" name="duration_minutes" value="{{ old('duration_minutes', $service->duration_minutes) }}" required>

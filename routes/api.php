@@ -71,6 +71,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/customer/profile', [CustomerProfileController::class, 'upsert']);
             Route::get('/customer/verification', [UserIdentityVerificationController::class, 'show']);
             Route::post('/customer/verification', [UserIdentityVerificationController::class, 'store']);
+            Route::post('/orders/pair-provider/preview', [UserOrderController::class, 'previewPairProvider']);
             Route::post('/orders', [UserOrderController::class, 'store']);
             Route::get('/orders', [UserOrderController::class, 'index']);
             Route::get('/orders/{public_id}', [UserOrderController::class, 'show']);

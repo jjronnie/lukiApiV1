@@ -55,6 +55,7 @@ class StoreServiceRequest extends FormRequest
             'slug' => ['required', 'string', 'max:120', 'unique:services,slug'],
             'name' => ['required', 'string', 'max:120'],
             'icon_name' => ['required', 'string', 'max:80'],
+            'image_url' => ['nullable', 'url', 'max:255'],
             'description' => ['nullable', 'string'],
             'currency' => ['required', 'string', 'size:3'],
             'duration_minutes' => ['required', 'integer', 'min:1'],

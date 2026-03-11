@@ -7,6 +7,9 @@ use App\Models\Order;
 use App\Models\OrderOffer;
 use App\Models\ProviderProfile;
 use App\Models\Service;
+use App\Models\ServiceTier;
+use App\Enums\OrderStatus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 
 class DispatchService
@@ -45,14 +48,15 @@ class DispatchService
             ->values();
     }
 
-    public function offerInBatches(Order $order, int $batchSize = 3, int $expirySeconds = 15): void
+    public function offerInBatches(Order $order, int $batchSize = 3, int $expirySeconds = 15): int
     {
         $eligible = $this->eligibleProviders($order);
         if ($eligible->isEmpty()) {
-            return;
+            return 0;
         }
 
         $batchNo = 1;
+        $offersCreated = 0;
         foreach ($eligible->chunk($batchSize) as $chunk) {
             foreach ($chunk as $provider) {
                 OrderOffer::query()->create([
@@ -75,24 +79,32 @@ class DispatchService
                     'body' => 'A nearby customer needs your service.',
                     'payload' => ['order_public_id' => $order->public_id],
                 ]);
+                $offersCreated++;
             }
             $batchNo++;
         }
+
+        return $offersCreated;
     }
 
     /**
      * @return array{provider: ProviderProfile|null, message: string|null}
      */
-    public function resolvePairProvider(Service $service, int $providerNumber): array
+    public function resolvePairProvider(Service $service, ServiceTier $serviceTier, int $providerNumber): array
     {
         $provider = ProviderProfile::query()
             ->where('provider_number', $providerNumber)
             ->with([
                 'availability',
+                'user',
                 'wallet',
                 'providerServices' => fn ($query) => $query
                     ->where('service_id', $service->id)
-                    ->where('is_active', true),
+                    ->where('is_active', true)
+                    ->with(['eligibleTiers' => fn ($tierQuery) => $tierQuery
+                        ->where('service_tiers.id', $serviceTier->id)
+                        ->where('provider_service_tiers.is_active', true),
+                    ]),
             ])
             ->first();
 
@@ -115,6 +127,17 @@ class DispatchService
             return [
                 'provider' => null,
                 'message' => 'This provider does not offer the selected service.',
+            ];
+        }
+
+        $isTierEligible = $provider->providerServices->contains(function ($providerService) {
+            return $providerService->eligibleTiers->isNotEmpty();
+        });
+
+        if (! $isTierEligible) {
+            return [
+                'provider' => null,
+                'message' => 'This provider is not eligible for the selected tier.',
             ];
         }
 
@@ -173,6 +196,61 @@ class DispatchService
             'body' => 'A customer requested you directly by your provider number.',
             'payload' => ['order_public_id' => $order->public_id],
         ]);
+    }
+
+    public function syncSearchState(Order $order): Order
+    {
+        if ($order->status !== OrderStatus::Offering || $order->provider_profile_id !== null) {
+            return $order;
+        }
+
+        $hasAcceptedOffer = $order->offers()
+            ->where('status', 'accepted')
+            ->exists();
+
+        if ($hasAcceptedOffer) {
+            return $order;
+        }
+
+        $hasActivePendingOffer = $order->offers()
+            ->where('status', 'pending')
+            ->where('expires_at', '>', now())
+            ->exists();
+
+        if ($hasActivePendingOffer) {
+            return $order;
+        }
+
+        DB::transaction(function () use ($order): void {
+            $freshOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+
+            if ($freshOrder->status !== OrderStatus::Offering || $freshOrder->provider_profile_id !== null) {
+                return;
+            }
+
+            $freshOrder->update([
+                'status' => OrderStatus::Expired,
+                'expired_at' => now(),
+            ]);
+
+            $freshOrder->statusHistories()->create([
+                'from_status' => OrderStatus::Offering->value,
+                'to_status' => OrderStatus::Expired->value,
+                'changed_by_user_id' => $freshOrder->user_id,
+                'meta' => ['source' => 'dispatch_timeout_or_exhausted'],
+                'created_at' => now(),
+            ]);
+        });
+
+        return $order->fresh([
+            'items',
+            'providerProfile.user',
+            'providerProfile.availability',
+            'service.category',
+            'serviceTier',
+            'statusHistories',
+            'offers',
+        ]) ?? $order;
     }
 
     private function scoreProvider(ProviderProfile $provider, ?Order $order = null): float

@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 class ProviderProfile extends Model
@@ -199,5 +201,18 @@ class ProviderProfile extends Model
         }
 
         throw new RuntimeException('Unable to assign a provider number.');
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (blank($this->avatar_path)) {
+            return null;
+        }
+
+        if (Str::startsWith($this->avatar_path, ['http://', 'https://'])) {
+            return $this->avatar_path;
+        }
+
+        return Storage::disk('public')->url($this->avatar_path);
     }
 }

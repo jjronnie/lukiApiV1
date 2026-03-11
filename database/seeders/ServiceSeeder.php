@@ -71,6 +71,7 @@ class ServiceSeeder extends Seeder
             [
                 'name' => 'Signature Silk Press',
                 'icon_name' => 'scissor',
+                'image_url' => 'https://images.unsplash.com/photo-1517832606299-7ae9b720a186?auto=format&fit=crop&w=900&q=80',
                 'description' => 'Smooth wash, treatment, blow dry, and silk press for natural hair.',
                 'category_slug' => 'hair-styling',
                 'base_price_amount' => 85000,
@@ -81,6 +82,7 @@ class ServiceSeeder extends Seeder
             [
                 'name' => 'Bridal Makeup Session',
                 'icon_name' => 'brush_2',
+                'image_url' => 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80',
                 'description' => 'Soft glam or full glam bridal makeup with lashes.',
                 'category_slug' => 'nails-makeup',
                 'base_price_amount' => 120000,
@@ -91,6 +93,7 @@ class ServiceSeeder extends Seeder
             [
                 'name' => 'Executive Barber Cut',
                 'icon_name' => 'profile_circle',
+                'image_url' => 'https://images.unsplash.com/photo-1622287162716-f311baa1a2b8?auto=format&fit=crop&w=900&q=80',
                 'description' => 'Precision cut, beard lining, and finishing spray.',
                 'category_slug' => 'barbering',
                 'base_price_amount' => 30000,
@@ -101,6 +104,7 @@ class ServiceSeeder extends Seeder
             [
                 'name' => 'Medium Knotless Braids',
                 'icon_name' => 'magicpen',
+                'image_url' => 'https://images.unsplash.com/photo-1595475038784-bbe439ff41e6?auto=format&fit=crop&w=900&q=80',
                 'description' => 'Protective knotless braids with neat parting and finishing mousse.',
                 'category_slug' => 'braids-natural-hair',
                 'base_price_amount' => 160000,
@@ -111,6 +115,7 @@ class ServiceSeeder extends Seeder
             [
                 'name' => 'Luxury Gel Manicure',
                 'icon_name' => 'brush_2',
+                'image_url' => 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=900&q=80',
                 'description' => 'Cuticle care, gel polish, and hand massage.',
                 'category_slug' => 'nails-makeup',
                 'base_price_amount' => 35000,
@@ -121,6 +126,7 @@ class ServiceSeeder extends Seeder
             [
                 'name' => 'Therapeutic Body Massage',
                 'icon_name' => 'heart',
+                'image_url' => 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=900&q=80',
                 'description' => 'Relaxing body massage focused on stress relief and muscle recovery.',
                 'category_slug' => 'massage-spa',
                 'base_price_amount' => 95000,
@@ -131,6 +137,7 @@ class ServiceSeeder extends Seeder
             [
                 'name' => 'Children Hair Braiding',
                 'icon_name' => 'magicpen',
+                'image_url' => 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=900&q=80',
                 'description' => 'Kid-friendly cornrows or braid styling.',
                 'category_slug' => 'braids-natural-hair',
                 'base_price_amount' => 55000,
@@ -141,6 +148,7 @@ class ServiceSeeder extends Seeder
             [
                 'name' => 'Classic Facial Grooming',
                 'icon_name' => 'profile_circle',
+                'image_url' => 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=900&q=80',
                 'description' => 'Beard treatment, facial steam, and hot towel finish.',
                 'category_slug' => 'barbering',
                 'base_price_amount' => 45000,
@@ -157,6 +165,7 @@ class ServiceSeeder extends Seeder
                     'service_category_id' => $categoryLookup[$service['category_slug']],
                     'name' => $service['name'],
                     'icon_name' => $service['icon_name'],
+                    'image_url' => $service['image_url'] ?? null,
                     'description' => $service['description'],
                     'currency' => 'UGX',
                     'base_price_amount' => $service['base_price_amount'],

@@ -7,8 +7,10 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\CancelOrderRequest;
+use App\Http\Requests\Api\V1\Order\PairProviderPreviewRequest;
 use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
 use App\Http\Resources\OrderResource;
+use App\Http\Resources\ProviderPreviewResource;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\ServiceTier;
@@ -62,7 +64,7 @@ class UserOrderController extends Controller
         $pairProvider = null;
         if (($data['booking_mode'] ?? OrderBookingMode::Normal->value) === OrderBookingMode::Pair->value) {
             $providerNumber = (int) ($data['pair_provider_number'] ?? 0);
-            $resolution = $this->dispatchService->resolvePairProvider($service, $providerNumber);
+            $resolution = $this->dispatchService->resolvePairProvider($service, $serviceTier, $providerNumber);
 
             if ($resolution['provider'] === null) {
                 throw ValidationException::withMessages([
@@ -179,22 +181,30 @@ class UserOrderController extends Controller
                     (int) config('luki.dispatch.offer_expiry_seconds', 30),
                 );
             } else {
-                $this->dispatchService->offerInBatches(
+                $offersCreated = $this->dispatchService->offerInBatches(
                     $order,
                     (int) config('luki.dispatch.offer_batch_size', 3),
                     (int) config('luki.dispatch.offer_expiry_seconds', 15),
                 );
+
+                if ($offersCreated === 0) {
+                    $order = $this->dispatchService->syncSearchState($order);
+                }
             }
         }
+
+        $order = $this->dispatchService->syncSearchState($order);
 
         $responseBody = [
             'message' => 'Order created.',
             'order' => (new OrderResource($order->load([
                 'items',
                 'statusHistories',
-                'providerProfile',
+                'providerProfile.user',
+                'providerProfile.availability',
                 'service.category',
                 'serviceTier',
+                'items.addOn',
             ])))->resolve(),
         ];
 
@@ -209,9 +219,11 @@ class UserOrderController extends Controller
     {
         $orders = Order::query()
             ->where('user_id', auth()->id())
-            ->with(['items', 'providerProfile', 'service.category', 'serviceTier'])
+            ->with(['items.addOn', 'providerProfile.user', 'providerProfile.availability', 'service.category', 'serviceTier'])
             ->latest()
             ->paginate(20);
+
+        $orders->getCollection()->transform(fn (Order $order) => $this->dispatchService->syncSearchState($order));
 
         return OrderResource::collection($orders);
     }
@@ -221,10 +233,53 @@ class UserOrderController extends Controller
         $order = Order::query()
             ->where('public_id', $publicId)
             ->where('user_id', auth()->id())
-            ->with(['items', 'providerProfile', 'statusHistories', 'service.category', 'serviceTier'])
+            ->with(['items.addOn', 'providerProfile.user', 'providerProfile.availability', 'statusHistories', 'service.category', 'serviceTier', 'offers'])
             ->firstOrFail();
 
+        $order = $this->dispatchService->syncSearchState($order);
+
         return new OrderResource($order);
+    }
+
+    public function previewPairProvider(PairProviderPreviewRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+
+        $service = Service::query()
+            ->where('public_id', $data['service_public_id'])
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $serviceTier = ServiceTier::query()
+            ->where('public_id', $data['service_tier_public_id'])
+            ->where('service_id', $service->id)
+            ->where('is_active', true)
+            ->first();
+
+        if ($serviceTier === null) {
+            throw ValidationException::withMessages([
+                'service_tier_public_id' => ['Selected service tier is invalid.'],
+            ]);
+        }
+
+        $resolution = $this->dispatchService->resolvePairProvider(
+            $service,
+            $serviceTier,
+            (int) $data['provider_number'],
+        );
+
+        if ($resolution['provider'] === null) {
+            throw ValidationException::withMessages([
+                'provider_number' => [$resolution['message'] ?? 'Provider pairing failed.'],
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Provider verified.',
+            'provider' => (new ProviderPreviewResource(
+                $resolution['provider']->loadMissing('user', 'availability')
+            ))->resolve(),
+        ]);
     }
 
     public function cancel(CancelOrderRequest $request, string $publicId): JsonResponse

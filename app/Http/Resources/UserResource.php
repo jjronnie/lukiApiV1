@@ -38,6 +38,7 @@ class UserResource extends JsonResource
                     'public_id' => $this->providerProfile->public_id,
                     'provider_number' => $this->providerProfile->provider_number,
                     'display_name' => $this->providerProfile->display_name,
+                    'avatar_url' => $this->providerProfile->avatar_url,
                     'provider_type' => $this->providerProfile->provider_type,
                     'verification_status' => $this->providerProfile->verification_status?->value ?? $this->providerProfile->verification_status,
                     'rejection_reason' => $this->providerProfile->rejection_reason,

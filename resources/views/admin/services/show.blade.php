@@ -5,9 +5,19 @@
 <p>Category: {{ $service->category?->name ?? '—' }}</p>
 <p>Slug: {{ $service->slug }}</p>
 <p>Icon Name: {{ $service->icon_name }}</p>
+<p>Image URL:
+    @if($service->image_url)
+        <a href="{{ $service->image_url }}" target="_blank" rel="noreferrer">{{ $service->image_url }}</a>
+    @else
+        —
+    @endif
+</p>
 <p>From Price: {{ number_format($service->base_price_amount) }} {{ $service->currency }}</p>
 <p>Featured: {{ $service->is_featured ? 'Yes' : 'No' }}</p>
 <p>Status: {{ $service->is_active ? 'Active' : 'Inactive' }}</p>
+@if($service->image_url)
+    <p><img src="{{ $service->image_url }}" alt="{{ $service->name }}" style="max-width: 280px; border-radius: 16px;"></p>
+@endif
 <div class="actions">
     <a class="btn" href="{{ route('admin.services.edit', $service) }}">Edit</a>
     <form class="inline" method="POST" action="{{ route('admin.services.destroy', $service) }}">

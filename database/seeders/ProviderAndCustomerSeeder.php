@@ -99,6 +99,7 @@ class ProviderAndCustomerSeeder extends Seeder
                 'profile' => [
                     'provider_type' => 'individual',
                     'display_name' => 'Luki Demo Provider',
+                    'avatar_path' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
                     'verification_status' => ProviderVerificationStatus::Approved,
                     'verified_at' => now(),
                 ],
@@ -113,6 +114,7 @@ class ProviderAndCustomerSeeder extends Seeder
                 'profile' => [
                     'provider_type' => 'individual',
                     'display_name' => 'Grace Signature Styles',
+                    'avatar_path' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80',
                     'verification_status' => ProviderVerificationStatus::Pending,
                 ],
                 'is_online' => false,
@@ -126,6 +128,7 @@ class ProviderAndCustomerSeeder extends Seeder
                 'profile' => [
                     'provider_type' => 'business',
                     'display_name' => 'Calm Spa Studio',
+                    'avatar_path' => 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
                     'verification_status' => ProviderVerificationStatus::Rejected,
                     'rejection_reason' => 'Business registration document was expired.',
                 ],
@@ -154,6 +157,7 @@ class ProviderAndCustomerSeeder extends Seeder
                 [
                     'provider_type' => $providerData['profile']['provider_type'],
                     'display_name' => $providerData['profile']['display_name'],
+                    'avatar_path' => $providerData['profile']['avatar_path'] ?? null,
                     'verification_status' => $providerData['profile']['verification_status'],
                     'verified_at' => $providerData['profile']['verified_at'] ?? null,
                     'rejection_reason' => $providerData['profile']['rejection_reason'] ?? null,

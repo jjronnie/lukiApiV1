@@ -57,6 +57,7 @@ class ProviderProfileController extends Controller
                 'public_id' => $profile->public_id,
                 'provider_number' => $profile->provider_number,
                 'display_name' => $profile->display_name,
+                'avatar_url' => $profile->avatar_url,
                 'verification_status' => $profile->verification_status?->value ?? $profile->verification_status,
             ],
         ]);

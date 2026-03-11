@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Enums\OrderStatus;
 
 class OrderResource extends JsonResource
 {
@@ -49,7 +50,9 @@ class OrderResource extends JsonResource
                 'public_id' => $this->service?->public_id,
                 'name' => $this->service_name_snapshot ?? $this->service?->name,
                 'icon_name' => $this->service?->icon_name,
+                'image_url' => $this->service?->image_url,
                 'category_name' => $this->service?->category?->name,
+                'category_image_url' => $this->service?->category?->image_url,
             ],
             'service_tier' => $this->service_tier_name_snapshot === null && $this->serviceTier === null ? null : [
                 'public_id' => $this->serviceTier?->public_id,
@@ -60,10 +63,32 @@ class OrderResource extends JsonResource
                 'public_id' => $this->providerProfile->public_id,
                 'display_name' => $this->providerProfile->display_name,
                 'provider_number' => $this->providerProfile->provider_number,
+                'avatar_url' => $this->providerProfile->avatar_url,
+                'phone' => $this->providerProfile->user?->phone,
                 'rating_avg' => (float) $this->providerProfile->rating_avg,
             ] : null,
+            'search_state' => [
+                'state' => $this->is_scheduled
+                    ? 'scheduled'
+                    : match ($this->status?->value ?? $this->status) {
+                        OrderStatus::Offering->value, OrderStatus::Created->value => 'searching',
+                        OrderStatus::Expired->value => 'no_provider_found',
+                        OrderStatus::Accepted->value,
+                        OrderStatus::OnTheWay->value,
+                        OrderStatus::Arrived->value,
+                        OrderStatus::InService->value,
+                        OrderStatus::Completed->value => 'matched',
+                        default => 'idle',
+                    },
+                'is_searching' => ! $this->is_scheduled && in_array($this->status?->value ?? $this->status, [
+                    OrderStatus::Created->value,
+                    OrderStatus::Offering->value,
+                ], true),
+                'can_retry' => ! $this->is_scheduled && ($this->status?->value ?? $this->status) === OrderStatus::Expired->value,
+            ],
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item) => [
                 'item_type' => $item->item_type,
+                'add_on_public_id' => $item->addOn?->public_id,
                 'name' => $item->name_snapshot,
                 'tier_name' => $item->tier_name_snapshot,
                 'unit_price_amount' => $item->unit_price_amount,

@@ -13,9 +13,12 @@ it('creates an order for the authenticated user', function () {
     $user->assignRole(RoleName::User->value);
 
     $service = Service::query()->firstOrFail();
+    $tier = $service->tiers()->where('is_active', true)->firstOrFail();
 
     $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/orders', [
         'service_public_id' => $service->public_id,
+        'service_tier_public_id' => $tier->public_id,
+        'booking_mode' => 'normal',
         'is_scheduled' => false,
         'address_text' => 'Kampala Road',
         'location_lat' => 0.3476,
