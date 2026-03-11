@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ServiceAddOnController;
 use App\Http\Controllers\Admin\ServiceCategoryController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ServicePricingRuleController;
+use App\Http\Controllers\Admin\TransportZoneController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserIdentityVerificationController;
 use App\Http\Controllers\Admin\WalletController;
@@ -39,6 +40,7 @@ Route::prefix('admin')
         Route::get('/', DashboardController::class)->name('dashboard');
 
         Route::resource('service-categories', ServiceCategoryController::class);
+        Route::resource('transport-zones', TransportZoneController::class);
         Route::resource('home-adverts', HomeAdvertController::class);
         Route::resource('services', ServiceController::class);
         Route::resource('addons', ServiceAddOnController::class)->parameters(['addons' => 'serviceAddOn']);

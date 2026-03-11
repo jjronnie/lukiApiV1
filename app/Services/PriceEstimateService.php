@@ -10,6 +10,10 @@ use App\Models\ServiceTier;
 
 class PriceEstimateService
 {
+    public function __construct(
+        private readonly TransportZoneResolver $transportZoneResolver,
+    ) {}
+
     /**
      * @param  array<int, int>  $addOnIds
      * @return array<string, mixed>
@@ -18,7 +22,8 @@ class PriceEstimateService
         Service $service,
         ServiceTier $serviceTier,
         array $addOnIds,
-        float $distanceKm,
+        float $locationLat,
+        float $locationLng,
         int $serviceMinutes,
         ?string $promoCode = null,
     ): array
@@ -27,8 +32,9 @@ class PriceEstimateService
 
         $baseAmount = $serviceTier->price_amount;
         $addOnsAmount = (int) $addOns->sum('price_amount');
+        $transport = $this->transportZoneResolver->resolve($locationLat, $locationLng);
+        $transportFee = (int) $transport['fee_amount'];
 
-        $distanceFee = 0;
         $peakFee = 0;
         $overtimeFee = 0;
         $taxAmount = 0;
@@ -42,22 +48,6 @@ class PriceEstimateService
             ->get();
 
         foreach ($rules as $rule) {
-            if ($rule->rule_type === PricingRuleType::DistancePerKm) {
-                $distanceFee += (int) round($distanceKm * (int) ($rule->config['amount_per_km'] ?? 0));
-            }
-
-            if ($rule->rule_type === PricingRuleType::DistanceBand) {
-                $bands = (array) ($rule->config['bands'] ?? []);
-                foreach ($bands as $band) {
-                    $min = (float) ($band['min_km'] ?? 0);
-                    $max = (float) ($band['max_km'] ?? INF);
-                    if ($distanceKm >= $min && $distanceKm < $max) {
-                        $distanceFee += (int) ($band['fee_amount'] ?? 0);
-                        break;
-                    }
-                }
-            }
-
             if ($rule->rule_type === PricingRuleType::PeakHours && $this->isPeakHour((array) $rule->config)) {
                 $peakFee += (int) ($rule->config['fee_amount'] ?? 0);
             }
@@ -70,7 +60,7 @@ class PriceEstimateService
             }
         }
 
-        $subtotal = $baseAmount + $addOnsAmount + $distanceFee + $peakFee + $overtimeFee;
+        $subtotal = $baseAmount + $addOnsAmount + $transportFee + $peakFee + $overtimeFee;
 
         $taxRule = $rules->first(fn ($rule) => $rule->rule_type === PricingRuleType::TaxPercentage);
         if ($taxRule !== null) {
@@ -90,7 +80,10 @@ class PriceEstimateService
             'subtotal_amount' => $subtotal,
             'base_service_amount' => $baseAmount,
             'addons_amount' => $addOnsAmount,
-            'distance_fee_amount' => $distanceFee,
+            'transport_fee_amount' => $transportFee,
+            'transport_zone_name' => $transport['zone_name'],
+            'transport_zone_id' => $transport['zone']?->id,
+            'distance_fee_amount' => $transportFee,
             'peak_fee_amount' => $peakFee,
             'overtime_fee_amount' => $overtimeFee,
             'tax_amount' => $taxAmount,
@@ -100,6 +93,13 @@ class PriceEstimateService
             'tier' => [
                 'name' => $serviceTier->name,
                 'amount' => $baseAmount,
+            ],
+            'transport' => [
+                'label' => $transport['zone_name'] === null
+                    ? 'Transport fee'
+                    : 'Transport fee for '.$transport['zone_name'],
+                'zone_name' => $transport['zone_name'],
+                'amount' => $transportFee,
             ],
             'items' => [
                 'base' => [

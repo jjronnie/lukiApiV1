@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             SuperAdminSeeder::class,
             ServiceSeeder::class,
+            TransportZoneSeeder::class,
             HomeAdvertSeeder::class,
             ProviderAndCustomerSeeder::class,
         ]);

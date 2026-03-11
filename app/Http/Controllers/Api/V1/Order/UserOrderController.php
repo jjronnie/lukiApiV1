@@ -84,7 +84,8 @@ class UserOrderController extends Controller
             service: $service,
             serviceTier: $serviceTier,
             addOnIds: $addOnIds,
-            distanceKm: (float) ($data['distance_km'] ?? 0),
+            locationLat: (float) $data['location_lat'],
+            locationLng: (float) $data['location_lng'],
             serviceMinutes: (int) ($data['service_minutes'] ?? $service->duration_minutes),
             promoCode: $data['promo_code'] ?? null,
         );
@@ -94,8 +95,10 @@ class UserOrderController extends Controller
                 'user_id' => $request->user()->id,
                 'service_id' => $service->id,
                 'service_tier_id' => $serviceTier->id,
+                'transport_zone_id' => $breakdown['transport_zone_id'] ?? null,
                 'service_name_snapshot' => $service->name,
                 'service_tier_name_snapshot' => $serviceTier->name,
+                'transport_zone_name_snapshot' => $breakdown['transport_zone_name'] ?? null,
                 'status' => OrderStatus::Created,
                 'booking_mode' => $data['booking_mode'],
                 'pair_provider_number' => ($data['booking_mode'] ?? OrderBookingMode::Normal->value) === OrderBookingMode::Pair->value
@@ -111,6 +114,7 @@ class UserOrderController extends Controller
                 'payment_method' => $data['payment_method'],
                 'payment_status' => PaymentStatus::Unpaid,
                 'subtotal_amount' => $breakdown['subtotal_amount'],
+                'transport_fee_amount' => $breakdown['transport_fee_amount'],
                 'distance_fee_amount' => $breakdown['distance_fee_amount'],
                 'overtime_fee_amount' => $breakdown['overtime_fee_amount'],
                 'peak_fee_amount' => $breakdown['peak_fee_amount'],

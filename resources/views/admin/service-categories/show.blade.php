@@ -11,6 +11,7 @@
         -
     @endif
 </p>
+<p>Featured on home: {{ $category->is_featured ? 'Yes' : 'No' }}</p>
 <p>Status: {{ $category->is_active ? 'Active' : 'Inactive' }}</p>
 <div class="actions">
     <a class="btn" href="{{ route('admin.service-categories.edit', $category) }}">Edit</a>

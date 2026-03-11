@@ -2,22 +2,20 @@
 
 namespace App\Models;
 
-use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class ServiceCategory extends Model
+class TransportZone extends Model
 {
-    use HasPublicId;
-
     protected $fillable = [
-        'public_id',
         'name',
         'slug',
-        'icon_name',
-        'image_url',
-        'is_featured',
+        'center_lat',
+        'center_lng',
+        'radius_km',
+        'fee_amount',
         'is_active',
+        'is_fallback',
         'sort_order',
     ];
 
@@ -27,14 +25,18 @@ class ServiceCategory extends Model
     protected function casts(): array
     {
         return [
-            'is_featured' => 'boolean',
+            'center_lat' => 'decimal:7',
+            'center_lng' => 'decimal:7',
+            'radius_km' => 'decimal:2',
+            'fee_amount' => 'integer',
             'is_active' => 'boolean',
+            'is_fallback' => 'boolean',
             'sort_order' => 'integer',
         ];
     }
 
-    public function services(): HasMany
+    public function orders(): HasMany
     {
-        return $this->hasMany(Service::class);
+        return $this->hasMany(Order::class);
     }
 }

@@ -78,6 +78,13 @@
                     </svg>
                     Categories
                 </a>
+                <a href="{{ route('admin.transport-zones.index') }}"
+                    class="admin-nav-link {{ request()->routeIs('admin.transport-zones.*') ? 'admin-nav-link-active' : '' }}">
+                    <svg class="admin-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 2.75a.75.75 0 0 1 .67.414l5.5 11A.75.75 0 0 1 15.5 15.25h-11a.75.75 0 0 1-.67-1.086l5.5-11A.75.75 0 0 1 10 2.75Zm0 3.432-3.145 6.318h6.29L10 6.182Z" />
+                    </svg>
+                    Transport Zones
+                </a>
                 <a href="{{ route('admin.home-adverts.index') }}"
                     class="admin-nav-link {{ request()->routeIs('admin.home-adverts.*') ? 'admin-nav-link-active' : '' }}">
                     <svg class="admin-icon" viewBox="0 0 20 20" fill="currentColor">

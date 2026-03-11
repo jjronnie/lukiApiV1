@@ -21,8 +21,10 @@ class Order extends Model
         'provider_profile_id',
         'service_id',
         'service_tier_id',
+        'transport_zone_id',
         'service_name_snapshot',
         'service_tier_name_snapshot',
+        'transport_zone_name_snapshot',
         'status',
         'booking_mode',
         'pair_provider_number',
@@ -48,6 +50,7 @@ class Order extends Model
         'payment_status',
         'paid_at',
         'subtotal_amount',
+        'transport_fee_amount',
         'distance_fee_amount',
         'overtime_fee_amount',
         'peak_fee_amount',
@@ -81,6 +84,7 @@ class Order extends Model
             'location_lat' => 'decimal:7',
             'location_lng' => 'decimal:7',
             'subtotal_amount' => 'integer',
+            'transport_fee_amount' => 'integer',
             'distance_fee_amount' => 'integer',
             'overtime_fee_amount' => 'integer',
             'peak_fee_amount' => 'integer',
@@ -117,6 +121,11 @@ class Order extends Model
     public function serviceTier(): BelongsTo
     {
         return $this->belongsTo(ServiceTier::class);
+    }
+
+    public function transportZone(): BelongsTo
+    {
+        return $this->belongsTo(TransportZone::class);
     }
 
     public function items(): HasMany

@@ -45,6 +45,7 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
+    Route::get('/service-categories/{slug}', [ServiceCategoryController::class, 'show']);
     Route::get('/home-adverts', [HomeAdvertController::class, 'index']);
     Route::get('/services', [ServiceCatalogController::class, 'index']);
     Route::get('/services/{public_id}', [ServiceCatalogController::class, 'show']);

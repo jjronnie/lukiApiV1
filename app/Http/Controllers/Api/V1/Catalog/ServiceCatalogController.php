@@ -14,6 +14,8 @@ class ServiceCatalogController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
+        $perPage = min(50, max(1, $request->integer('per_page') ?: $request->integer('limit') ?: 20));
+
         $services = Service::query()
             ->where('is_active', true)
             ->whereHas('category', fn ($query) => $query->where('is_active', true))
@@ -28,19 +30,27 @@ class ServiceCatalogController extends Controller
                 fn ($query) => $query->where('is_featured', true)
             )
             ->when(
+                $request->filled('q'),
+                function ($query) use ($request): void {
+                    $search = trim($request->string('q')->toString());
+                    $query->where(function ($searchQuery) use ($search): void {
+                        $searchQuery
+                            ->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('description', 'like', '%'.$search.'%');
+                    });
+                }
+            )
+            ->when(
                 $request->filled('category_slug'),
                 fn ($query) => $query->whereHas(
                     'category',
                     fn ($categoryQuery) => $categoryQuery->where('slug', $request->string('category_slug')->toString())
                 )
             )
-            ->orderByDesc('is_featured')
             ->orderBy('sort_order')
-            ->when(
-                $request->integer('limit') > 0,
-                fn ($query) => $query->limit(min(20, max(1, $request->integer('limit'))))
-            )
-            ->get();
+            ->orderBy('name')
+            ->paginate($perPage)
+            ->withQueryString();
 
         return ServiceResource::collection($services);
     }

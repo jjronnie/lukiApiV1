@@ -18,6 +18,7 @@ class ServiceCategoryResource extends JsonResource
             'slug' => $this->slug,
             'icon_name' => $this->icon_name,
             'image_url' => $this->image_url,
+            'is_featured' => $this->is_featured,
             'is_active' => $this->is_active,
             'sort_order' => $this->sort_order,
             'services_count' => $this->whenCounted('services'),

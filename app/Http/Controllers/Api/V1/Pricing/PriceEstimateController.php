@@ -40,7 +40,8 @@ class PriceEstimateController extends Controller
             service: $service,
             serviceTier: $serviceTier,
             addOnIds: $addOnIds,
-            distanceKm: (float) ($data['distance_km'] ?? 0),
+            locationLat: (float) $data['location_lat'],
+            locationLng: (float) $data['location_lng'],
             serviceMinutes: (int) ($data['service_minutes'] ?? $service->duration_minutes),
             promoCode: $data['promo_code'] ?? null,
         );

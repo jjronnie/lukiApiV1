@@ -18,6 +18,7 @@ class ServiceSeeder extends Seeder
                 'slug' => 'hair-styling',
                 'icon_name' => 'scissor',
                 'image_url' => 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80',
+                'is_featured' => true,
                 'sort_order' => 1,
             ],
             [
@@ -25,6 +26,7 @@ class ServiceSeeder extends Seeder
                 'slug' => 'nails-makeup',
                 'icon_name' => 'brush_2',
                 'image_url' => 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=900&q=80',
+                'is_featured' => true,
                 'sort_order' => 2,
             ],
             [
@@ -32,6 +34,7 @@ class ServiceSeeder extends Seeder
                 'slug' => 'barbering',
                 'icon_name' => 'profile_circle',
                 'image_url' => 'https://images.unsplash.com/photo-1517832606299-7ae9b720a186?auto=format&fit=crop&w=900&q=80',
+                'is_featured' => true,
                 'sort_order' => 3,
             ],
             [
@@ -39,6 +42,7 @@ class ServiceSeeder extends Seeder
                 'slug' => 'braids-natural-hair',
                 'icon_name' => 'magicpen',
                 'image_url' => 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=900&q=80',
+                'is_featured' => true,
                 'sort_order' => 4,
             ],
             [
@@ -46,6 +50,7 @@ class ServiceSeeder extends Seeder
                 'slug' => 'massage-spa',
                 'icon_name' => 'heart',
                 'image_url' => 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=900&q=80',
+                'is_featured' => false,
                 'sort_order' => 5,
             ],
         ];
@@ -59,6 +64,7 @@ class ServiceSeeder extends Seeder
                     'name' => $category['name'],
                     'icon_name' => $category['icon_name'],
                     'image_url' => $category['image_url'],
+                    'is_featured' => $category['is_featured'],
                     'is_active' => true,
                     'sort_order' => $category['sort_order'],
                 ]

@@ -11,6 +11,7 @@
     <label>Icon Name</label><input name="icon_name" value="{{ old('icon_name', $category->icon_name) }}" required>
     <label>Image URL</label><input name="image_url" value="{{ old('image_url', $category->image_url) }}" placeholder="https://...">
     <label>Sort Order</label><input type="number" name="sort_order" value="{{ old('sort_order', $category->sort_order) }}">
+    <label><input type="checkbox" name="is_featured" value="1" {{ old('is_featured', $category->is_featured) ? 'checked' : '' }} style="width:auto;"> Featured on home suggestions</label>
     <label><input type="checkbox" name="is_active" value="1" {{ $category->is_active ? 'checked' : '' }} style="width:auto;"> Active</label>
     <button type="submit">Save</button>
 </form>

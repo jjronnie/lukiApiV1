@@ -37,6 +37,8 @@ class OrderResource extends JsonResource
                 'base_amount' => data_get($this->price_breakdown, 'base_service_amount', 0),
                 'addons_amount' => data_get($this->price_breakdown, 'addons_amount', 0),
                 'subtotal_amount' => $this->subtotal_amount,
+                'transport_fee_amount' => $this->transport_fee_amount,
+                'transport_zone_name' => $this->transport_zone_name_snapshot ?? data_get($this->price_breakdown, 'transport_zone_name'),
                 'distance_fee_amount' => $this->distance_fee_amount,
                 'overtime_fee_amount' => $this->overtime_fee_amount,
                 'peak_fee_amount' => $this->peak_fee_amount,

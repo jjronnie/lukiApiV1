@@ -21,7 +21,8 @@ class PriceEstimateRequest extends FormRequest
             'service_tier_public_id' => ['required', 'string', 'exists:service_tiers,public_id'],
             'add_on_public_ids' => ['nullable', 'array'],
             'add_on_public_ids.*' => ['string', 'exists:service_add_ons,public_id'],
-            'distance_km' => ['nullable', 'numeric', 'min:0'],
+            'location_lat' => ['required', 'numeric', 'between:-90,90'],
+            'location_lng' => ['required', 'numeric', 'between:-180,180'],
             'service_minutes' => ['nullable', 'integer', 'min:1'],
             'promo_code' => ['nullable', 'string', 'max:40'],
         ];

@@ -10,6 +10,7 @@ class UpdateServiceCategoryRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
+            'is_featured' => $this->boolean('is_featured'),
             'is_active' => $this->boolean('is_active'),
         ]);
     }
@@ -31,6 +32,7 @@ class UpdateServiceCategoryRequest extends FormRequest
             'slug' => ['required', 'string', 'max:160', Rule::unique('service_categories', 'slug')->ignore($categoryId)],
             'icon_name' => ['required', 'string', 'max:80'],
             'image_url' => ['nullable', 'url', 'max:255'],
+            'is_featured' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
