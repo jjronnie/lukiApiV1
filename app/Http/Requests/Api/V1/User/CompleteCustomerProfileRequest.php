@@ -36,6 +36,8 @@ class CompleteCustomerProfileRequest extends FormRequest
         $userId = $this->user()?->id;
 
         return [
+            'first_name' => ['nullable', 'string', 'min:2', 'max:60', Rule::requiredIf(fn () => $this->filled('last_name'))],
+            'last_name' => ['nullable', 'string', 'min:2', 'max:60', Rule::requiredIf(fn () => $this->filled('first_name'))],
             'phone_country_code' => ['required', Rule::in(['+256'])],
             'phone_local_number' => ['required', 'digits:9'],
             'phone' => ['required', 'string', Rule::unique('users', 'phone')->ignore($userId)],

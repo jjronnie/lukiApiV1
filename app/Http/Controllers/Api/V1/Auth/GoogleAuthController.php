@@ -12,6 +12,7 @@ use App\Services\AuthTokenService;
 use Google\Client as GoogleClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
+use Throwable;
 use Illuminate\Validation\ValidationException;
 
 class GoogleAuthController extends Controller
@@ -24,7 +25,7 @@ class GoogleAuthController extends Controller
     {
         $appType = MobileAppType::fromRequest($request);
         $idToken = $request->validated('id_token');
-        $clientId = trim((string) config('services.google.client_id'));
+        $clientId = trim((string) config('services.google.server_client_id'));
 
         if ($clientId === '') {
             return response()->json([
@@ -32,7 +33,11 @@ class GoogleAuthController extends Controller
             ], 500);
         }
 
-        $payload = (new GoogleClient(['client_id' => $clientId]))->verifyIdToken($idToken);
+        try {
+            $payload = (new GoogleClient(['client_id' => $clientId]))->verifyIdToken($idToken);
+        } catch (Throwable) {
+            $payload = null;
+        }
 
         if (! is_array($payload) || ($payload['aud'] ?? null) !== $clientId) {
             throw ValidationException::withMessages([
@@ -60,14 +65,32 @@ class GoogleAuthController extends Controller
         if ($name === '') {
             $name = Str::of($email)->before('@')->replace('.', ' ')->title()->value();
         }
+        [$firstName, $lastName] = User::splitName($name);
 
         $user = User::query()->where('google_id', $googleId)->first();
 
         if ($user === null) {
-            $user = User::query()->where('email', $email)->first();
+            $emailMatchedUser = User::query()->where('email', $email)->first();
+
+            if ($emailMatchedUser !== null) {
+                if ($emailMatchedUser->is_blocked) {
+                    throw ValidationException::withMessages([
+                        'email' => ['This account is blocked.'],
+                    ]);
+                }
+
+                if ($error = $this->mobileAccessErrorResponse($emailMatchedUser, $appType)) {
+                    return $error;
+                }
+            }
+
+            $user = $emailMatchedUser;
 
             if ($user !== null) {
                 $user->forceFill([
+                    'first_name' => $user->first_name ?: $firstName,
+                    'last_name' => $user->last_name ?: $lastName,
+                    'name' => $user->name ?: User::combineName($firstName, $lastName),
                     'google_id' => $googleId,
                     'signup_method' => 'google',
                     'email_verified_at' => $user->email_verified_at ?? now(),
@@ -77,6 +100,8 @@ class GoogleAuthController extends Controller
 
         if ($user === null) {
             $user = User::query()->create([
+                'first_name' => $firstName,
+                'last_name' => $lastName,
                 'name' => $name,
                 'email' => $email,
                 'google_id' => $googleId,
@@ -105,6 +130,12 @@ class GoogleAuthController extends Controller
         }
 
         $user->forceFill([
+            'first_name' => $user->first_name ?: $firstName,
+            'last_name' => $user->last_name ?: $lastName,
+            'name' => User::combineName(
+                $user->first_name ?: $firstName,
+                $user->last_name ?: $lastName,
+            ),
             'google_id' => $user->google_id ?: $googleId,
             'signup_method' => 'google',
             'email_verified_at' => $user->email_verified_at ?? now(),

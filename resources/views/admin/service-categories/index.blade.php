@@ -6,13 +6,20 @@
     <a class="btn" href="{{ route('admin.service-categories.create') }}">New Category</a>
 </div>
 <table>
-    <thead><tr><th>Name</th><th>Slug</th><th>Icon</th><th>Services</th><th>Status</th><th></th></tr></thead>
+    <thead><tr><th>Name</th><th>Slug</th><th>Icon</th><th>Image</th><th>Services</th><th>Status</th><th></th></tr></thead>
     <tbody>
     @foreach($categories as $category)
         <tr>
             <td>{{ $category->name }}</td>
             <td>{{ $category->slug }}</td>
             <td>{{ $category->icon_name }}</td>
+            <td>
+                @if($category->image_url)
+                    <a href="{{ $category->image_url }}" target="_blank" rel="noreferrer">Preview</a>
+                @else
+                    <span>-</span>
+                @endif
+            </td>
             <td>{{ $category->services_count }}</td>
             <td>{{ $category->is_active ? 'Active' : 'Inactive' }}</td>
             <td class="actions">

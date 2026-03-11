@@ -34,10 +34,20 @@ class AuthController extends Controller
         $data = $request->validated();
         $appType = MobileAppType::fromRequest($request);
 
-        $name = $data['name']
-            ?? Str::of($data['email'])->before('@')->replace('.', ' ')->title()->value();
+        $firstName = trim((string) ($data['first_name'] ?? ''));
+        $lastName = trim((string) ($data['last_name'] ?? ''));
+        $name = User::combineName($firstName, $lastName);
+
+        if ($name === '') {
+            [$firstName, $lastName] = User::splitName(
+                Str::of($data['email'])->before('@')->replace('.', ' ')->title()->value()
+            );
+            $name = User::combineName($firstName, $lastName);
+        }
 
         $user = User::query()->create([
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'name' => $name,
             'email' => strtolower($data['email']),
             'phone' => $data['phone'] ?? null,
@@ -215,6 +225,7 @@ class AuthController extends Controller
         $purpose = match ($data['purpose']) {
             'register' => 'email_verification',
             'login' => 'login',
+            'password_change' => 'password_change',
             default => 'password_reset',
         };
 

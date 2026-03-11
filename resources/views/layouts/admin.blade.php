@@ -78,6 +78,14 @@
                     </svg>
                     Categories
                 </a>
+                <a href="{{ route('admin.home-adverts.index') }}"
+                    class="admin-nav-link {{ request()->routeIs('admin.home-adverts.*') ? 'admin-nav-link-active' : '' }}">
+                    <svg class="admin-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                            d="M3.5 4.75A1.75 1.75 0 0 1 5.25 3h9.5A1.75 1.75 0 0 1 16.5 4.75v10.5A1.75 1.75 0 0 1 14.75 17h-9.5A1.75 1.75 0 0 1 3.5 15.25V4.75Zm2.25 1a.75.75 0 0 0-.75.75v7a.75.75 0 0 0 1.28.53l2.22-2.22 1.72 1.72a.75.75 0 0 0 1.06 0l2.72-2.72 1.22 1.22a.75.75 0 0 0 1.28-.53V6.5a.75.75 0 0 0-.75-.75h-9.5Zm1.75 1.75a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" />
+                    </svg>
+                    Home Adverts
+                </a>
                 <a href="{{ route('admin.addons.index') }}"
                     class="admin-nav-link {{ request()->routeIs('admin.addons.*') ? 'admin-nav-link-active' : '' }}">
                     <svg class="admin-icon" viewBox="0 0 20 20" fill="currentColor">

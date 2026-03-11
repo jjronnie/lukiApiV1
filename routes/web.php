@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CommissionRuleController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DisputeController;
+use App\Http\Controllers\Admin\HomeAdvertController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\ServiceAddOnController;
@@ -38,6 +39,7 @@ Route::prefix('admin')
         Route::get('/', DashboardController::class)->name('dashboard');
 
         Route::resource('service-categories', ServiceCategoryController::class);
+        Route::resource('home-adverts', HomeAdvertController::class);
         Route::resource('services', ServiceController::class);
         Route::resource('addons', ServiceAddOnController::class)->parameters(['addons' => 'serviceAddOn']);
         Route::resource('pricing-rules', ServicePricingRuleController::class)->parameters(['pricing-rules' => 'servicePricingRule']);

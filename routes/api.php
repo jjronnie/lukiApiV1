@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Auth\GoogleAuthController;
 use App\Http\Controllers\Api\V1\Auth\PasswordController;
 use App\Http\Controllers\Api\V1\Catalog\ServiceCatalogController;
 use App\Http\Controllers\Api\V1\Catalog\ServiceCategoryController;
+use App\Http\Controllers\Api\V1\Catalog\HomeAdvertController;
 use App\Http\Controllers\Api\V1\Dispute\DisputeController;
 use App\Http\Controllers\Api\V1\Order\OrderRatingController;
 use App\Http\Controllers\Api\V1\Order\UserOrderController;
@@ -36,12 +37,15 @@ Route::prefix('v1')->group(function () {
         Route::middleware('auth:sanctum')->group(function () {
             Route::get('/me', [AuthController::class, 'me']);
             Route::post('/logout', [AuthController::class, 'logout']);
+            Route::post('/password/change/request', [PasswordController::class, 'requestChange']);
+            Route::post('/password/change/verify', [PasswordController::class, 'verifyChange']);
             Route::post('/password/change', [PasswordController::class, 'change']);
             Route::post('/email/verify/send', [EmailVerificationController::class, 'send'])->middleware('throttle:auth-api');
         });
     });
 
     Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
+    Route::get('/home-adverts', [HomeAdvertController::class, 'index']);
     Route::get('/services', [ServiceCatalogController::class, 'index']);
     Route::get('/services/{public_id}', [ServiceCatalogController::class, 'show']);
     Route::get('/services/{public_id}/addons', [ServiceCatalogController::class, 'addons']);

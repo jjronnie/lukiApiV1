@@ -14,6 +14,8 @@ class UserResource extends JsonResource
     {
         return [
             'public_id' => $this->public_id,
+            'first_name' => $this->first_name,
+            'last_name' => $this->last_name,
             'name' => $this->name,
             'email' => $this->email,
             'signup_method' => $this->signup_method,
@@ -25,6 +27,7 @@ class UserResource extends JsonResource
             'email_verified_at' => $this->email_verified_at,
             'phone_verified_at' => $this->phone_verified_at,
             'profile_completed_at' => $this->profile_completed_at,
+            'created_at' => $this->created_at,
             'roles' => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')->values()),
             'provider_profile' => $this->whenLoaded('providerProfile', function () {
                 if ($this->providerProfile === null) {

@@ -11,7 +11,8 @@ it('validates auth register requires password confirmation', function () {
 
     $response = $this->postJson('/api/v1/auth/register', [
         'app_type' => 'customer',
-        'name' => 'Test User',
+        'first_name' => 'Test',
+        'last_name' => 'User',
         'email' => 'test-user@example.com',
         'password' => 'Password123',
     ]);
@@ -25,7 +26,8 @@ it('validates auth register requires app_type', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $response = $this->postJson('/api/v1/auth/register', [
-        'name' => 'Test User',
+        'first_name' => 'Test',
+        'last_name' => 'User',
         'email' => 'test-user@example.com',
         'password' => 'Password123',
         'password_confirmation' => 'Password123',
@@ -104,15 +106,14 @@ it('validates auth logout payload types', function () {
         ->assertJsonValidationErrors(['logout_all']);
 });
 
-it('validates change password requires current password', function () {
+it('validates change password request requires current password', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
     $user->assignRole(RoleName::User->value);
 
-    $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/auth/password/change', [
-        'password' => 'Password123',
-        'password_confirmation' => 'Password123',
+    $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/auth/password/change/request', [
+        'app_type' => 'customer',
     ]);
 
     $response

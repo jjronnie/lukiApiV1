@@ -16,6 +16,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $permissions = [
             'manage service categories',
+            'manage home adverts',
             'manage services',
             'manage pricing rules',
             'manage users',

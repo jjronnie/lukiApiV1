@@ -13,11 +13,41 @@ class ServiceSeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            ['name' => 'Hair Styling', 'slug' => 'hair-styling', 'icon_name' => 'scissor', 'sort_order' => 1],
-            ['name' => 'Nails & Makeup', 'slug' => 'nails-makeup', 'icon_name' => 'brush_2', 'sort_order' => 2],
-            ['name' => 'Barbering', 'slug' => 'barbering', 'icon_name' => 'profile_circle', 'sort_order' => 3],
-            ['name' => 'Braids & Natural Hair', 'slug' => 'braids-natural-hair', 'icon_name' => 'magicpen', 'sort_order' => 4],
-            ['name' => 'Massage & Spa', 'slug' => 'massage-spa', 'icon_name' => 'heart', 'sort_order' => 5],
+            [
+                'name' => 'Hair Styling',
+                'slug' => 'hair-styling',
+                'icon_name' => 'scissor',
+                'image_url' => 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80',
+                'sort_order' => 1,
+            ],
+            [
+                'name' => 'Nails & Makeup',
+                'slug' => 'nails-makeup',
+                'icon_name' => 'brush_2',
+                'image_url' => 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=900&q=80',
+                'sort_order' => 2,
+            ],
+            [
+                'name' => 'Barbering',
+                'slug' => 'barbering',
+                'icon_name' => 'profile_circle',
+                'image_url' => 'https://images.unsplash.com/photo-1517832606299-7ae9b720a186?auto=format&fit=crop&w=900&q=80',
+                'sort_order' => 3,
+            ],
+            [
+                'name' => 'Braids & Natural Hair',
+                'slug' => 'braids-natural-hair',
+                'icon_name' => 'magicpen',
+                'image_url' => 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=900&q=80',
+                'sort_order' => 4,
+            ],
+            [
+                'name' => 'Massage & Spa',
+                'slug' => 'massage-spa',
+                'icon_name' => 'heart',
+                'image_url' => 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=900&q=80',
+                'sort_order' => 5,
+            ],
         ];
 
         $categoryLookup = [];
@@ -28,6 +58,7 @@ class ServiceSeeder extends Seeder
                 [
                     'name' => $category['name'],
                     'icon_name' => $category['icon_name'],
+                    'image_url' => $category['image_url'],
                     'is_active' => true,
                     'sort_order' => $category['sort_order'],
                 ]

@@ -4,6 +4,13 @@
 <h1>{{ $category->name }}</h1>
 <p>Slug: {{ $category->slug }}</p>
 <p>Icon Name: {{ $category->icon_name }}</p>
+<p>Image URL:
+    @if($category->image_url)
+        <a href="{{ $category->image_url }}" target="_blank" rel="noreferrer">{{ $category->image_url }}</a>
+    @else
+        -
+    @endif
+</p>
 <p>Status: {{ $category->is_active ? 'Active' : 'Inactive' }}</p>
 <div class="actions">
     <a class="btn" href="{{ route('admin.service-categories.edit', $category) }}">Edit</a>

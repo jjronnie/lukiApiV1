@@ -48,8 +48,15 @@ class ProcessIdentityVerificationImage implements ShouldQueue
         $sanitizedBaseName = Str::slug($baseName !== '' ? $baseName : $this->collectionName);
         $convertedPath = $tempDirectory.'/'.Str::uuid().'.webp';
 
-        imagewebp($image, $convertedPath, 85);
+        $converted = imagewebp($image, $convertedPath, 85);
         imagedestroy($image);
+
+        if (! $converted || ! file_exists($convertedPath)) {
+            @unlink($convertedPath);
+            Storage::disk('local')->delete($this->sourcePath);
+
+            return;
+        }
 
         $verification
             ->addMedia($convertedPath)

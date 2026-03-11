@@ -28,6 +28,7 @@ class StoreServiceCategoryRequest extends FormRequest
             'name' => ['required', 'string', 'max:120'],
             'slug' => ['required', 'string', 'max:160', 'unique:service_categories,slug'],
             'icon_name' => ['required', 'string', 'max:80'],
+            'image_url' => ['nullable', 'url', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];

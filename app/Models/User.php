@@ -31,6 +31,8 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'public_id',
         'name',
+        'first_name',
+        'last_name',
         'email',
         'email_verified_at',
         'google_id',
@@ -74,6 +76,25 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $user): void {
+            $firstName = trim((string) ($user->first_name ?? ''));
+            $lastName = trim((string) ($user->last_name ?? ''));
+
+            if ($firstName !== '' || $lastName !== '') {
+                $user->name = self::combineName($firstName, $lastName);
+                return;
+            }
+
+            if ($user->isDirty('name')) {
+                [$derivedFirstName, $derivedLastName] = self::splitName($user->name);
+                $user->first_name = $derivedFirstName;
+                $user->last_name = $derivedLastName;
+            }
+        });
+    }
+
     public function providerProfile(): HasOne
     {
         return $this->hasOne(ProviderProfile::class);
@@ -92,5 +113,30 @@ class User extends Authenticatable implements MustVerifyEmail
     public function identityVerification(): HasOne
     {
         return $this->hasOne(UserIdentityVerification::class);
+    }
+
+    /**
+     * @return array{0:string,1:?string}
+     */
+    public static function splitName(?string $fullName): array
+    {
+        $normalized = trim((string) $fullName);
+        if ($normalized === '') {
+            return ['', null];
+        }
+
+        $parts = preg_split('/\s+/', $normalized) ?: [];
+        $firstName = array_shift($parts) ?: $normalized;
+        $lastName = trim(implode(' ', $parts));
+
+        return [$firstName, $lastName !== '' ? $lastName : null];
+    }
+
+    public static function combineName(?string $firstName, ?string $lastName): string
+    {
+        return trim(implode(' ', array_filter([
+            trim((string) $firstName),
+            trim((string) $lastName),
+        ])));
     }
 }

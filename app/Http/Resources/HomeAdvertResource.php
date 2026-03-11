@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ServiceCategoryResource extends JsonResource
+class HomeAdvertResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -14,13 +14,15 @@ class ServiceCategoryResource extends JsonResource
     {
         return [
             'public_id' => $this->public_id,
-            'name' => $this->name,
-            'slug' => $this->slug,
-            'icon_name' => $this->icon_name,
+            'title' => $this->title,
+            'headline' => $this->headline,
+            'description' => $this->description,
+            'button_text' => $this->button_text,
+            'link_type' => $this->link_type,
+            'link_target' => $this->link_target,
             'image_url' => $this->image_url,
             'is_active' => $this->is_active,
             'sort_order' => $this->sort_order,
-            'services_count' => $this->whenCounted('services'),
         ];
     }
 }

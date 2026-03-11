@@ -15,6 +15,7 @@ class ServiceCategory extends Model
         'name',
         'slug',
         'icon_name',
+        'image_url',
         'is_active',
         'sort_order',
     ];

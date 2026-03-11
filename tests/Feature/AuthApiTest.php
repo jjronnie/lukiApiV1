@@ -14,7 +14,8 @@ it('registers, verifies otp, logs in and refreshes tokens for the customer app',
 
     $registerResponse = $this->postJson('/api/v1/auth/register', [
         'app_type' => 'customer',
-        'name' => 'API User',
+        'first_name' => 'API',
+        'last_name' => 'User',
         'email' => 'api-user@example.com',
         'password' => 'Password123',
         'password_confirmation' => 'Password123',

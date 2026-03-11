@@ -9,6 +9,7 @@ enum AuditAction: string
     case WalletAdjusted = 'wallet_adjusted';
     case ServiceCategoryChanged = 'service_category_changed';
     case ServiceEdited = 'service_edited';
+    case HomeAdvertChanged = 'home_advert_changed';
     case CommissionRuleChanged = 'commission_rule_changed';
     case DisputeResolved = 'dispute_resolved';
     case UserIdentityVerificationApproved = 'user_identity_verification_approved';

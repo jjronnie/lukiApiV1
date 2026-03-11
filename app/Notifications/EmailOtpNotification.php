@@ -35,6 +35,7 @@ class EmailOtpNotification extends Notification
             'email_verification' => 'Verify your email address',
             'login' => 'Your login verification code',
             'password_reset' => 'Your password reset code',
+            'password_change' => 'Your password change verification code',
             default => 'Your verification code',
         };
 
@@ -42,6 +43,7 @@ class EmailOtpNotification extends Notification
             'email_verification' => 'Confirm your email address',
             'login' => 'Confirm your login',
             'password_reset' => 'Reset your password',
+            'password_change' => 'Confirm your password change',
             default => 'Security verification',
         };
 

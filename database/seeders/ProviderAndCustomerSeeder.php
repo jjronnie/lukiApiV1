@@ -21,7 +21,8 @@ class ProviderAndCustomerSeeder extends Seeder
         $customers = [
             [
                 'email' => 'customer@luki.test',
-                'name' => 'Demo Customer',
+                'first_name' => 'Demo',
+                'last_name' => 'Customer',
                 'phone_country_code' => '+256',
                 'phone_local_number' => '700111111',
                 'heard_about_source' => 'friend',
@@ -30,7 +31,8 @@ class ProviderAndCustomerSeeder extends Seeder
             ],
             [
                 'email' => 'sarah.customer@luki.test',
-                'name' => 'Sarah Customer',
+                'first_name' => 'Sarah',
+                'last_name' => 'Customer',
                 'phone_country_code' => '+256',
                 'phone_local_number' => '700222222',
                 'heard_about_source' => 'social_media',
@@ -39,7 +41,8 @@ class ProviderAndCustomerSeeder extends Seeder
             ],
             [
                 'email' => 'james.customer@luki.test',
-                'name' => 'James Customer',
+                'first_name' => 'James',
+                'last_name' => 'Customer',
                 'phone_country_code' => '+256',
                 'phone_local_number' => '700333333',
                 'heard_about_source' => 'other',
@@ -59,7 +62,9 @@ class ProviderAndCustomerSeeder extends Seeder
             $customer = User::query()->updateOrCreate(
                 ['email' => $customerData['email']],
                 [
-                    'name' => $customerData['name'],
+                    'first_name' => $customerData['first_name'],
+                    'last_name' => $customerData['last_name'],
+                    'name' => trim($customerData['first_name'].' '.$customerData['last_name']),
                     'password' => 'Password123',
                     'email_verified_at' => now(),
                     'phone_country_code' => $customerData['phone_country_code'],
@@ -89,7 +94,8 @@ class ProviderAndCustomerSeeder extends Seeder
         $providers = [
             [
                 'email' => 'provider@luki.test',
-                'name' => 'Demo Provider',
+                'first_name' => 'Demo',
+                'last_name' => 'Provider',
                 'profile' => [
                     'provider_type' => 'individual',
                     'display_name' => 'Luki Demo Provider',
@@ -102,7 +108,8 @@ class ProviderAndCustomerSeeder extends Seeder
             ],
             [
                 'email' => 'stylist.provider@luki.test',
-                'name' => 'Grace Stylist',
+                'first_name' => 'Grace',
+                'last_name' => 'Stylist',
                 'profile' => [
                     'provider_type' => 'individual',
                     'display_name' => 'Grace Signature Styles',
@@ -114,7 +121,8 @@ class ProviderAndCustomerSeeder extends Seeder
             ],
             [
                 'email' => 'spa.provider@luki.test',
-                'name' => 'Calm Spa Provider',
+                'first_name' => 'Calm',
+                'last_name' => 'Spa Provider',
                 'profile' => [
                     'provider_type' => 'business',
                     'display_name' => 'Calm Spa Studio',
@@ -131,7 +139,9 @@ class ProviderAndCustomerSeeder extends Seeder
             $provider = User::query()->updateOrCreate(
                 ['email' => $providerData['email']],
                 [
-                    'name' => $providerData['name'],
+                    'first_name' => $providerData['first_name'],
+                    'last_name' => $providerData['last_name'],
+                    'name' => trim($providerData['first_name'].' '.$providerData['last_name']),
                     'password' => 'Password123',
                     'email_verified_at' => now(),
                 ]
