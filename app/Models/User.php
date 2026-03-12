@@ -42,8 +42,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone_country_code',
         'phone_local_number',
         'referral_code',
-        'heard_about_source',
-        'heard_about_other',
         'phone_verified_at',
         'last_seen_at',
         'profile_completed_at',

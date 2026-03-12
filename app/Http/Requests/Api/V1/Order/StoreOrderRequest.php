@@ -29,7 +29,6 @@ class StoreOrderRequest extends FormRequest
             'location_lat' => ['required', 'numeric', 'between:-90,90'],
             'location_lng' => ['required', 'numeric', 'between:-180,180'],
             'place_id' => ['nullable', 'string', 'max:120'],
-            'location_notes' => ['nullable', 'string', 'max:255'],
             'payment_method' => ['required', 'string', 'in:cash,card,mtn,airtel'],
             'distance_km' => ['nullable', 'numeric', 'min:0'],
             'service_minutes' => ['nullable', 'integer', 'min:1'],

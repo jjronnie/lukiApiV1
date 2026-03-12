@@ -215,7 +215,6 @@ return new class extends Migration
             $table->decimal('location_lat', 10, 7);
             $table->decimal('location_lng', 10, 7);
             $table->string('place_id', 120)->nullable();
-            $table->string('location_notes', 255)->nullable();
 
             $table->string('payment_method', 16);
             $table->string('payment_status', 16)->default('unpaid')->index();

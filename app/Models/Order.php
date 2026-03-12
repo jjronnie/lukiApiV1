@@ -45,7 +45,6 @@ class Order extends Model
         'location_lat',
         'location_lng',
         'place_id',
-        'location_notes',
         'payment_method',
         'payment_status',
         'paid_at',

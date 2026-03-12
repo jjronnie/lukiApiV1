@@ -25,7 +25,6 @@ class OrderResource extends JsonResource
                 'lat' => $this->location_lat,
                 'lng' => $this->location_lng,
                 'place_id' => $this->place_id,
-                'notes' => $this->location_notes,
             ],
             'payment' => [
                 'method' => $this->payment_method?->value ?? $this->payment_method,

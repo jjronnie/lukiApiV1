@@ -25,7 +25,6 @@ class ProviderAndCustomerSeeder extends Seeder
                 'last_name' => 'Customer',
                 'phone_country_code' => '+256',
                 'phone_local_number' => '700111111',
-                'heard_about_source' => 'friend',
                 'profile_completed_at' => now(),
                 'verification' => ['status' => UserIdentityVerificationStatus::Approved, 'id_type' => 'national_id', 'verified_at' => now()],
             ],
@@ -35,7 +34,6 @@ class ProviderAndCustomerSeeder extends Seeder
                 'last_name' => 'Customer',
                 'phone_country_code' => '+256',
                 'phone_local_number' => '700222222',
-                'heard_about_source' => 'social_media',
                 'profile_completed_at' => now(),
                 'verification' => ['status' => UserIdentityVerificationStatus::Pending, 'id_type' => 'passport', 'submitted_at' => now()],
             ],
@@ -45,8 +43,6 @@ class ProviderAndCustomerSeeder extends Seeder
                 'last_name' => 'Customer',
                 'phone_country_code' => '+256',
                 'phone_local_number' => '700333333',
-                'heard_about_source' => 'other',
-                'heard_about_other' => 'Event activation booth',
                 'profile_completed_at' => now(),
                 'verification' => [
                     'status' => UserIdentityVerificationStatus::Rejected,
@@ -70,8 +66,6 @@ class ProviderAndCustomerSeeder extends Seeder
                     'phone_country_code' => $customerData['phone_country_code'],
                     'phone_local_number' => $customerData['phone_local_number'],
                     'phone' => $customerData['phone_country_code'].$customerData['phone_local_number'],
-                    'heard_about_source' => $customerData['heard_about_source'] ?? null,
-                    'heard_about_other' => $customerData['heard_about_other'] ?? null,
                     'profile_completed_at' => $customerData['profile_completed_at'],
                 ]
             );

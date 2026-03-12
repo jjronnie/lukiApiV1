@@ -20,7 +20,6 @@ class CustomerProfileController extends Controller
         $nextLastName = trim((string) ($data['last_name'] ?? $user->last_name ?? ''));
         $nextName = \App\Models\User::combineName($nextFirstName, $nextLastName);
         $nameChanged = $nextName !== trim((string) $user->name);
-        $heardAboutSourceProvided = array_key_exists('heard_about_source', $data);
 
         if ($nameChanged && $verificationStatus === UserIdentityVerificationStatus::Approved) {
             throw ValidationException::withMessages([
@@ -35,12 +34,6 @@ class CustomerProfileController extends Controller
             'phone' => $data['phone'],
             'phone_country_code' => $data['phone_country_code'],
             'phone_local_number' => $data['phone_local_number'],
-            'heard_about_source' => $heardAboutSourceProvided
-                ? ($data['heard_about_source'] ?? null)
-                : $user->heard_about_source,
-            'heard_about_other' => $heardAboutSourceProvided
-                ? (($data['heard_about_source'] ?? null) === 'other' ? ($data['heard_about_other'] ?? null) : null)
-                : $user->heard_about_other,
             'profile_completed_at' => now(),
         ]);
 

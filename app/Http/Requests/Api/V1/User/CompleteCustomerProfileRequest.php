@@ -41,8 +41,6 @@ class CompleteCustomerProfileRequest extends FormRequest
             'phone_country_code' => ['required', Rule::in(['+256'])],
             'phone_local_number' => ['required', 'digits:9'],
             'phone' => ['required', 'string', Rule::unique('users', 'phone')->ignore($userId)],
-            'heard_about_source' => ['nullable', Rule::in(['friend', 'social_media', 'google', 'radio', 'flyer', 'other'])],
-            'heard_about_other' => ['nullable', 'string', 'max:120', Rule::requiredIf(fn () => $this->input('heard_about_source') === 'other')],
         ];
     }
 }

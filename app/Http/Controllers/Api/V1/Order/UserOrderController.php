@@ -110,7 +110,6 @@ class UserOrderController extends Controller
                 'location_lat' => $data['location_lat'],
                 'location_lng' => $data['location_lng'],
                 'place_id' => $data['place_id'] ?? null,
-                'location_notes' => $data['location_notes'] ?? null,
                 'payment_method' => $data['payment_method'],
                 'payment_status' => PaymentStatus::Unpaid,
                 'subtotal_amount' => $breakdown['subtotal_amount'],

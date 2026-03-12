@@ -29,8 +29,6 @@ return new class extends Migration
             $table->string('referral_code', 24)->nullable()->unique();
             $table->timestampTz('last_seen_at')->nullable();
             $table->timestampTz('profile_completed_at')->nullable();
-            $table->string('heard_about_source', 40)->nullable();
-            $table->string('heard_about_other', 120)->nullable();
             $table->boolean('is_blocked')->default(false);
             $table->string('google_id')->nullable()->unique();
             $table->string('signup_method', 24)->default('email');
