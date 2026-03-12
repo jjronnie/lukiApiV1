@@ -40,21 +40,31 @@ class EmailOtpNotification extends Notification
         };
 
         $headline = match ($this->purpose) {
-            'email_verification' => 'Confirm your email address',
-            'login' => 'Confirm your login',
-            'password_reset' => 'Reset your password',
-            'password_change' => 'Confirm your password change',
-            default => 'Security verification',
+            'email_verification' => 'Your Email Verification Code',
+            'login' => 'Your Login Verification Code',
+            'password_reset' => 'Your Password Reset Code',
+            'password_change' => 'Your Password Change Verification Code',
+            default => 'Your Verification Code',
+        };
+
+        $intro = match ($this->purpose) {
+            'email_verification' => 'Use the code below to confirm your email address.',
+            'login' => 'Use the code below to finish signing in.',
+            'password_reset' => 'Use the code below to continue resetting your password.',
+            'password_change' => 'Use the code below to confirm your password change request.',
+            default => 'Use the code below to complete your request.',
         };
 
         return (new MailMessage)
             ->subject($subject)
-            ->greeting($headline)
-            ->line('Use the 6-digit code below to complete your request.')
-            ->line("Code: {$this->code}")
-            ->line("This code expires in {$this->expiresInMinutes} minutes.")
-            ->line('Please also check your spam or junk folder if you do not see this email in your inbox.')
-            ->line('If you did not request this code, you can ignore this email.');
+            ->view('emails.otp-code', [
+                'headline' => $headline,
+                'intro' => $intro,
+                'code' => $this->code,
+                'expiresInMinutes' => $this->expiresInMinutes,
+                'expiresAt' => now()->addMinutes($this->expiresInMinutes),
+                'appName' => config('app.name', 'Luki Online'),
+            ]);
     }
 
     /**
