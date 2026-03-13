@@ -18,6 +18,7 @@ use App\Services\DispatchService;
 use App\Services\IdempotencyService;
 use App\Services\PriceEstimateService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -218,8 +219,12 @@ class UserOrderController extends Controller
         return response()->json($responseBody, 201);
     }
 
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request)
     {
+        if ($request->boolean('activity_view')) {
+            return $this->activityIndex($request);
+        }
+
         $orders = Order::query()
             ->where('user_id', auth()->id())
             ->with(['items.addOn', 'providerProfile.user', 'providerProfile.availability', 'service.category', 'serviceTier'])
@@ -229,6 +234,45 @@ class UserOrderController extends Controller
         $orders->getCollection()->transform(fn (Order $order) => $this->dispatchService->syncSearchState($order));
 
         return OrderResource::collection($orders);
+    }
+
+    private function activityIndex(Request $request): JsonResponse
+    {
+        $limitPerSection = max(1, min((int) $request->integer('limit_per_section', 5), 10));
+        $relations = ['items.addOn', 'providerProfile.user', 'providerProfile.availability', 'service.category', 'serviceTier'];
+        $ongoingStatuses = [
+            OrderStatus::Created,
+            OrderStatus::Offering,
+            OrderStatus::Accepted,
+            OrderStatus::OnTheWay,
+            OrderStatus::Arrived,
+            OrderStatus::InService,
+        ];
+
+        $ongoing = Order::query()
+            ->where('user_id', $request->user()->id)
+            ->whereIn('status', array_map(fn (OrderStatus $status) => $status->value, $ongoingStatuses))
+            ->with($relations)
+            ->latest()
+            ->limit($limitPerSection)
+            ->get()
+            ->map(fn (Order $order) => $this->dispatchService->syncSearchState($order))
+            ->values();
+
+        $completed = Order::query()
+            ->where('user_id', $request->user()->id)
+            ->where('status', OrderStatus::Completed)
+            ->with($relations)
+            ->latest()
+            ->limit($limitPerSection)
+            ->get()
+            ->map(fn (Order $order) => $this->dispatchService->syncSearchState($order))
+            ->values();
+
+        return response()->json([
+            'ongoing' => OrderResource::collection($ongoing)->resolve(),
+            'completed' => OrderResource::collection($completed)->resolve(),
+        ]);
     }
 
     public function show(string $publicId): OrderResource

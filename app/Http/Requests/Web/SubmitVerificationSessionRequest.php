@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Http\Requests\Api\V1\User;
+namespace App\Http\Requests\Web;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class SubmitUserIdentityVerificationRequest extends FormRequest
+class SubmitVerificationSessionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        return true;
     }
 
     /**

@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Provider\ProviderProfileController;
 use App\Http\Controllers\Api\V1\Provider\ProviderServiceController;
 use App\Http\Controllers\Api\V1\User\CustomerProfileController;
 use App\Http\Controllers\Api\V1\User\UserIdentityVerificationController;
+use App\Http\Controllers\Api\V1\User\UserIdentityVerificationSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -72,6 +73,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/customer/profile', [CustomerProfileController::class, 'upsert']);
             Route::get('/customer/verification', [UserIdentityVerificationController::class, 'show']);
             Route::post('/customer/verification', [UserIdentityVerificationController::class, 'store']);
+            Route::post('/customer/verification/session', [UserIdentityVerificationSessionController::class, 'store'])
+                ->middleware('throttle:auth-api');
             Route::post('/orders/pair-provider/preview', [UserOrderController::class, 'previewPairProvider']);
             Route::post('/orders', [UserOrderController::class, 'store']);
             Route::get('/orders', [UserOrderController::class, 'index']);

@@ -113,6 +113,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(UserIdentityVerification::class);
     }
 
+    public function verificationSessions(): HasMany
+    {
+        return $this->hasMany(VerificationSession::class);
+    }
+
     /**
      * @return array{0:string,1:?string}
      */

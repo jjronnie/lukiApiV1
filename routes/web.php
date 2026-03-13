@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\UserIdentityVerificationController;
 use App\Http\Controllers\Admin\WalletController;
 use App\Http\Controllers\Api\V1\Auth\EmailVerificationController;
 use App\Http\Controllers\Web\Auth\LoginController;
+use App\Http\Controllers\Web\VerificationSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -32,6 +33,11 @@ Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
     ->middleware(['signed', 'throttle:auth-api'])
     ->name('verification.verify');
+
+Route::get('/verify/identity/{session}', [VerificationSessionController::class, 'show'])
+    ->name('verification.sessions.show');
+Route::post('/verify/identity/{session}', [VerificationSessionController::class, 'store'])
+    ->name('verification.sessions.submit');
 
 Route::prefix('admin')
     ->name('admin.')

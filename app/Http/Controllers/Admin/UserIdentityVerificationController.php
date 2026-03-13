@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditAction;
 use App\Enums\UserIdentityVerificationStatus;
+use App\Enums\VerificationSessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReviewUserIdentityVerificationRequest;
 use App\Models\UserIdentityVerification;
+use App\Models\VerificationSession;
 use App\Services\AuditLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,6 +57,18 @@ class UserIdentityVerificationController extends Controller
                 ? ($data['rejection_reason'] ?? null)
                 : null,
         ]);
+
+        VerificationSession::query()
+            ->where('user_id', $verification->user_id)
+            ->where('status', VerificationSessionStatus::Submitted)
+            ->whereNull('completed_at')
+            ->latest('submitted_at')
+            ->limit(1)
+            ->update([
+                'status' => VerificationSessionStatus::Completed,
+                'completed_at' => now(),
+                'updated_at' => now(),
+            ]);
 
         $this->auditLogService->log(
             action: $status === UserIdentityVerificationStatus::Approved
