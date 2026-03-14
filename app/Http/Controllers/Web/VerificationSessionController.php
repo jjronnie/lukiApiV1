@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Enums\ProviderVerificationStatus;
 use App\Enums\UserIdentityVerificationStatus;
+use App\Enums\VerificationSessionFlow;
 use App\Enums\VerificationSessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\SubmitVerificationSessionRequest;
+use App\Models\ProviderIdentityVerification;
 use App\Models\UserIdentityVerification;
 use App\Models\VerificationSession;
+use App\Services\ProviderIdentityVerificationSubmissionService;
 use App\Services\UserIdentityVerificationSubmissionService;
 use Illuminate\Http\Request;
 
@@ -15,6 +19,7 @@ class VerificationSessionController extends Controller
 {
     public function __construct(
         private readonly UserIdentityVerificationSubmissionService $submissionService,
+        private readonly ProviderIdentityVerificationSubmissionService $providerSubmissionService,
     ) {}
 
     public function show(Request $request, VerificationSession $session)
@@ -33,7 +38,9 @@ class VerificationSessionController extends Controller
             ], 403);
         }
 
-        $currentVerification = $session->user()->with('identityVerification')->first()?->identityVerification;
+        $currentVerification = $session->flow === VerificationSessionFlow::ProviderIdentity
+            ? $session->user()->with('providerIdentityVerification')->first()?->providerIdentityVerification
+            : $session->user()->with('identityVerification')->first()?->identityVerification;
         $blockedResponse = $this->resolveBlockedState($session, $currentVerification);
         if ($blockedResponse !== null) {
             return $blockedResponse;
@@ -49,6 +56,7 @@ class VerificationSessionController extends Controller
             'session' => $session,
             'expiresAt' => $session->expires_at,
             'submitUrl' => $request->fullUrl(),
+            'isProviderFlow' => $session->flow === VerificationSessionFlow::ProviderIdentity,
         ]);
     }
 
@@ -70,13 +78,19 @@ class VerificationSessionController extends Controller
             ], 403);
         }
 
-        $currentVerification = $session->user()->with('identityVerification')->first()?->identityVerification;
+        $currentVerification = $session->flow === VerificationSessionFlow::ProviderIdentity
+            ? $session->user()->with('providerIdentityVerification')->first()?->providerIdentityVerification
+            : $session->user()->with('identityVerification')->first()?->identityVerification;
         $blockedResponse = $this->resolveBlockedState($session, $currentVerification);
         if ($blockedResponse !== null) {
             return $blockedResponse;
         }
 
-        $this->submissionService->submit($session->user, $request->validated());
+        if ($session->flow === VerificationSessionFlow::ProviderIdentity) {
+            $this->providerSubmissionService->submit($session->user, $request->validated());
+        } else {
+            $this->submissionService->submit($session->user, $request->validated());
+        }
 
         $session->forceFill([
             'status' => VerificationSessionStatus::Submitted,
@@ -86,8 +100,12 @@ class VerificationSessionController extends Controller
         ])->save();
 
         return response()->view('verification.result', [
-            'title' => 'Verification submitted',
-            'message' => 'Your verification was submitted successfully. Our team will review it and update your status in the app.',
+            'title' => $session->flow === VerificationSessionFlow::ProviderIdentity
+                ? 'Provider verification submitted'
+                : 'Verification submitted',
+            'message' => $session->flow === VerificationSessionFlow::ProviderIdentity
+                ? 'Your provider verification was submitted successfully. Our team will review it and update your status in the app.'
+                : 'Your verification was submitted successfully. Our team will review it and update your status in the app.',
             'tone' => 'success',
         ]);
     }
@@ -109,7 +127,7 @@ class VerificationSessionController extends Controller
 
     private function resolveBlockedState(
         VerificationSession $session,
-        ?UserIdentityVerification $currentVerification,
+        UserIdentityVerification|ProviderIdentityVerification|null $currentVerification,
     ) {
         if ($session->shouldExpire()) {
             $session->markExpired();
@@ -129,28 +147,47 @@ class VerificationSessionController extends Controller
             ], 410);
         }
 
-        if ($currentVerification?->status === UserIdentityVerificationStatus::Approved) {
+        $approvedStatus = $session->flow === VerificationSessionFlow::ProviderIdentity
+            ? ProviderVerificationStatus::Approved->value
+            : UserIdentityVerificationStatus::Approved->value;
+        $pendingStatus = $session->flow === VerificationSessionFlow::ProviderIdentity
+            ? ProviderVerificationStatus::Pending->value
+            : UserIdentityVerificationStatus::Pending->value;
+        $rejectedStatus = $session->flow === VerificationSessionFlow::ProviderIdentity
+            ? ProviderVerificationStatus::Rejected->value
+            : UserIdentityVerificationStatus::Rejected->value;
+        $currentStatus = $currentVerification?->status?->value ?? $currentVerification?->status;
+
+        if ($currentStatus === $approvedStatus) {
             $this->completeSession($session);
 
             return response()->view('verification.result', [
-                'title' => 'Account already verified',
-                'message' => 'Your identity has already been approved. You can return to the app.',
+                'title' => $session->flow === VerificationSessionFlow::ProviderIdentity
+                    ? 'Provider already verified'
+                    : 'Account already verified',
+                'message' => $session->flow === VerificationSessionFlow::ProviderIdentity
+                    ? 'Your provider identity has already been approved. You can return to the app.'
+                    : 'Your identity has already been approved. You can return to the app.',
                 'tone' => 'success',
             ]);
         }
 
         if (
-            $currentVerification?->status === UserIdentityVerificationStatus::Pending
+            $currentStatus === $pendingStatus
             || in_array($session->status, [VerificationSessionStatus::Submitted, VerificationSessionStatus::Completed], true)
         ) {
             return response()->view('verification.result', [
-                'title' => 'Verification submitted',
-                'message' => 'Your verification was submitted successfully. Our team will review it and update your status in the app.',
+                'title' => $session->flow === VerificationSessionFlow::ProviderIdentity
+                    ? 'Provider verification submitted'
+                    : 'Verification submitted',
+                'message' => $session->flow === VerificationSessionFlow::ProviderIdentity
+                    ? 'Your provider verification was submitted successfully. Our team will review it and update your status in the app.'
+                    : 'Your verification was submitted successfully. Our team will review it and update your status in the app.',
                 'tone' => 'success',
             ]);
         }
 
-        if ($currentVerification?->status === UserIdentityVerificationStatus::Rejected) {
+        if ($currentStatus === $rejectedStatus) {
             return null;
         }
 

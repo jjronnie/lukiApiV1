@@ -18,10 +18,10 @@ class ProviderServiceController extends Controller
             ->pluck('id')
             ->all();
 
-        $profile->syncServiceEligibility($serviceIds);
+        $profile->syncRequestedServices($serviceIds);
 
         return response()->json([
-            'message' => 'Provider services updated.',
+            'message' => 'Service enrollment request updated.',
             'service_count' => count($serviceIds),
         ]);
     }

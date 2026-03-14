@@ -113,9 +113,29 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(UserIdentityVerification::class);
     }
 
+    public function providerIdentityVerification(): HasOne
+    {
+        return $this->hasOne(ProviderIdentityVerification::class);
+    }
+
     public function verificationSessions(): HasMany
     {
         return $this->hasMany(VerificationSession::class);
+    }
+
+    public function emailPreference(): HasOne
+    {
+        return $this->hasOne(UserEmailPreference::class);
+    }
+
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(UserDeviceToken::class);
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(NotificationRecord::class);
     }
 
     /**

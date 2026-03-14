@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProviderServiceApprovalStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,6 +14,11 @@ class ProviderService extends Model
         'provider_profile_id',
         'service_id',
         'is_active',
+        'approval_status',
+        'requested_at',
+        'reviewed_by',
+        'reviewed_at',
+        'review_reason',
     ];
 
     /**
@@ -22,6 +28,9 @@ class ProviderService extends Model
     {
         return [
             'is_active' => 'boolean',
+            'approval_status' => ProviderServiceApprovalStatus::class,
+            'requested_at' => 'datetime',
+            'reviewed_at' => 'datetime',
         ];
     }
 
@@ -35,6 +44,11 @@ class ProviderService extends Model
         return $this->belongsTo(Service::class);
     }
 
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
     public function tierQualifications(): HasMany
     {
         return $this->hasMany(ProviderServiceTier::class);
@@ -45,5 +59,11 @@ class ProviderService extends Model
         return $this->belongsToMany(ServiceTier::class, 'provider_service_tiers')
             ->withPivot('is_active')
             ->withTimestamps();
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->is_active
+            && ($this->approval_status?->value ?? $this->approval_status) === ProviderServiceApprovalStatus::Approved->value;
     }
 }

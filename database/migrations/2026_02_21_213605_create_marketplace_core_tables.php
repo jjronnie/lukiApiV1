@@ -14,7 +14,9 @@ return new class extends Migration
             $table->string('name', 120);
             $table->string('slug', 160)->unique();
             $table->string('icon_name', 80);
+            $table->string('image_url')->nullable();
             $table->boolean('is_active')->default(true)->index();
+            $table->boolean('is_featured')->default(false)->index();
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestampsTz();
         });
@@ -28,7 +30,13 @@ return new class extends Migration
             $table->string('display_name', 120);
             $table->string('legal_name', 160)->nullable();
             $table->text('bio')->nullable();
+            $table->string('phone', 32)->nullable();
+            $table->string('address_text', 255)->nullable();
+            $table->string('business_name', 160)->nullable();
+            $table->string('business_address', 255)->nullable();
+            $table->timestampTz('onboarding_completed_at')->nullable();
             $table->string('avatar_path')->nullable();
+            $table->timestampTz('avatar_locked_at')->nullable();
             $table->string('verification_status', 32)->default('pending')->index();
             $table->timestampTz('verified_at')->nullable();
             $table->text('rejection_reason')->nullable();
@@ -60,6 +68,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('name', 120);
             $table->string('icon_name', 80)->nullable();
+            $table->string('image_url', 255)->nullable();
             $table->text('description')->nullable();
             $table->string('currency', 3)->default('UGX');
             $table->integer('base_price_amount');
@@ -117,6 +126,11 @@ return new class extends Migration
             $table->foreignId('provider_profile_id')->constrained()->cascadeOnDelete();
             $table->foreignId('service_id')->constrained()->cascadeOnDelete();
             $table->boolean('is_active')->default(true);
+            $table->string('approval_status', 24)->default('pending')->index();
+            $table->timestampTz('requested_at')->nullable();
+            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestampTz('reviewed_at')->nullable();
+            $table->text('review_reason')->nullable();
             $table->timestampsTz();
 
             $table->unique(['provider_profile_id', 'service_id']);
@@ -183,6 +197,20 @@ return new class extends Migration
             $table->index(['service_id', 'is_active']);
         });
 
+        Schema::create('transport_zones', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 120);
+            $table->string('slug', 160)->unique();
+            $table->decimal('center_lat', 10, 7)->nullable();
+            $table->decimal('center_lng', 10, 7)->nullable();
+            $table->decimal('radius_km', 8, 2)->nullable();
+            $table->unsignedBigInteger('fee_amount')->default(0);
+            $table->boolean('is_active')->default(true)->index();
+            $table->boolean('is_fallback')->default(false)->index();
+            $table->unsignedSmallInteger('sort_order')->default(0)->index();
+            $table->timestampsTz();
+        });
+
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->ulid('public_id')->unique();
@@ -190,11 +218,13 @@ return new class extends Migration
             $table->foreignId('provider_profile_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('service_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('service_tier_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('transport_zone_id')->nullable()->constrained('transport_zones')->nullOnDelete();
             $table->string('status', 32)->default('created')->index();
             $table->string('booking_mode', 16)->default('normal')->index();
             $table->unsignedInteger('pair_provider_number')->nullable()->index();
             $table->string('service_name_snapshot', 120)->nullable();
             $table->string('service_tier_name_snapshot', 120)->nullable();
+            $table->string('transport_zone_name_snapshot', 120)->nullable();
 
             $table->boolean('is_scheduled')->default(false);
             $table->timestampTz('scheduled_at')->nullable()->index();
@@ -214,6 +244,11 @@ return new class extends Migration
             $table->string('address_text', 255);
             $table->decimal('location_lat', 10, 7);
             $table->decimal('location_lng', 10, 7);
+            $table->decimal('provider_last_location_lat', 10, 7)->nullable();
+            $table->decimal('provider_last_location_lng', 10, 7)->nullable();
+            $table->timestampTz('provider_last_location_at')->nullable();
+            $table->unsignedInteger('provider_eta_minutes')->nullable();
+            $table->unsignedInteger('provider_distance_meters')->nullable();
             $table->string('place_id', 120)->nullable();
 
             $table->string('payment_method', 16);
@@ -221,6 +256,7 @@ return new class extends Migration
             $table->timestampTz('paid_at')->nullable();
 
             $table->integer('subtotal_amount')->default(0);
+            $table->integer('transport_fee_amount')->default(0);
             $table->integer('distance_fee_amount')->default(0);
             $table->integer('overtime_fee_amount')->default(0);
             $table->integer('peak_fee_amount')->default(0);
@@ -383,6 +419,7 @@ return new class extends Migration
         Schema::dropIfExists('order_offers');
         Schema::dropIfExists('order_items');
         Schema::dropIfExists('orders');
+        Schema::dropIfExists('transport_zones');
         Schema::dropIfExists('commission_rules');
         Schema::dropIfExists('wallets');
         Schema::dropIfExists('provider_locations');

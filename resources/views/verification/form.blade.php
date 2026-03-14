@@ -2,6 +2,7 @@
 
 @php
     $pageTitle = 'Verify your account';
+    $isProviderFlow = (bool) ($isProviderFlow ?? false);
 @endphp
 
 @section('content')
@@ -15,6 +16,9 @@
         <div class="meta-bar">
             <span class="pill">Selfie required</span>
             <span class="pill">Front + back required</span>
+            @if ($isProviderFlow)
+                <span class="pill">Business licence optional</span>
+            @endif
             <span class="pill">Images only</span>
         </div>
     </section>
@@ -127,6 +131,33 @@
                 </div>
             </div>
 
+            @if ($isProviderFlow)
+                <div class="section">
+                    <h2>Step 4. Business licence</h2>
+                    <p>This document is optional. Add it only if you operate as a registered company or business.</p>
+                    <div class="field-card">
+                        <div class="field">
+                            <label for="business_license">Business licence image</label>
+                            <div class="preview-frame" data-preview-frame="business_license">
+                                <div class="preview-placeholder">Your optional business licence will preview here.</div>
+                            </div>
+                            <div class="action-row">
+                                <button class="btn-inline" type="button" data-open-camera="business_license">Take Photo</button>
+                                <button class="btn-inline" type="button" data-open-file="business_license">Choose File</button>
+                            </div>
+                            <div id="business_license-note" class="file-note">Optional image, up to 10MB.</div>
+                            <input
+                                id="business_license"
+                                class="visually-hidden"
+                                name="business_license"
+                                type="file"
+                                accept="image/*"
+                            >
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="button-row">
                 <button id="submit-button" class="btn" type="submit" disabled>Submit Verification</button>
             </div>
@@ -162,6 +193,16 @@
                 placeholder: 'The back of your ID will preview here.',
             },
         };
+
+        if (@json($isProviderFlow)) {
+            fieldConfig.business_license = {
+                input: document.getElementById('business_license'),
+                frame: document.querySelector('[data-preview-frame="business_license"]'),
+                note: document.getElementById('business_license-note'),
+                placeholder: 'Your optional business licence will preview here.',
+                optional: true,
+            };
+        }
 
         const setFieldMessage = (config, message, isError = false) => {
             if (!config.note) {
@@ -211,6 +252,10 @@
             const hasValidIdType = (idType.value || '').trim().length > 0;
             const allFieldsReady = Object.values(fieldConfig).every(({ input }) => {
                 const file = input.files && input.files[0];
+                if (input.id === 'business_license' && !file) {
+                    return true;
+                }
+
                 return validateFile(file) === null;
             });
 
@@ -219,7 +264,7 @@
 
         Object.values(fieldConfig).forEach((config) => {
             setPlaceholder(config);
-            setFieldMessage(config, 'Image only, up to 10MB.');
+            setFieldMessage(config, config.optional ? 'Optional image, up to 10MB.' : 'Image only, up to 10MB.');
         });
 
         Object.entries(fieldConfig).forEach(([fieldName, config]) => {
@@ -232,6 +277,13 @@
                 const validationError = validateFile(file);
 
                 if (validationError !== null) {
+                    if (fieldName === 'business_license' && !file) {
+                        setPlaceholder(config);
+                        setFieldMessage(config, 'Optional image, up to 10MB.');
+                        updateSubmitState();
+                        return;
+                    }
+
                     config.input.value = '';
                     setPlaceholder(config);
                     setFieldMessage(config, validationError, true);

@@ -68,6 +68,24 @@ class OrderResource extends JsonResource
                 'phone' => $this->providerProfile->user?->phone,
                 'rating_avg' => (float) $this->providerProfile->rating_avg,
             ] : null,
+            'customer' => $this->user !== null ? [
+                'public_id' => $this->user->public_id,
+                'name' => $this->user->name,
+                'phone' => $this->user->phone,
+                'address_text' => $this->address_text,
+            ] : null,
+            'tracking' => [
+                'provider_lat' => $this->provider_last_location_lat,
+                'provider_lng' => $this->provider_last_location_lng,
+                'provider_location_at' => $this->provider_last_location_at,
+                'provider_eta_minutes' => $this->provider_eta_minutes,
+                'provider_distance_meters' => $this->provider_distance_meters,
+            ],
+            'rating' => [
+                'provider_rating' => $this->provider_rating,
+                'provider_review' => $this->provider_review,
+                'rated_at' => $this->rated_at,
+            ],
             'search_state' => [
                 'state' => $this->is_scheduled
                     ? 'scheduled'
@@ -103,6 +121,12 @@ class OrderResource extends JsonResource
                 'meta' => $history->meta,
             ])->values()),
             'created_at' => $this->created_at,
+            'cancel_reason' => $this->cancellation_reason,
+            'accepted_at' => $this->accepted_at,
+            'on_the_way_at' => $this->on_the_way_at,
+            'arrived_at' => $this->arrived_at,
+            'in_service_at' => $this->in_service_at,
+            'completed_at' => $this->completed_at,
             'updated_at' => $this->updated_at,
         ];
     }

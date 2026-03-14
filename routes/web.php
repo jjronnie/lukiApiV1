@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserIdentityVerificationController;
 use App\Http\Controllers\Admin\WalletController;
 use App\Http\Controllers\Api\V1\Auth\EmailVerificationController;
+use App\Http\Controllers\Web\EmailPreferenceController;
 use App\Http\Controllers\Web\Auth\LoginController;
 use App\Http\Controllers\Web\VerificationSessionController;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,11 @@ Route::get('/verify/identity/{session}', [VerificationSessionController::class, 
     ->name('verification.sessions.show');
 Route::post('/verify/identity/{session}', [VerificationSessionController::class, 'store'])
     ->name('verification.sessions.submit');
+
+Route::get('/email/preferences/{user}', [EmailPreferenceController::class, 'show'])
+    ->name('email-preferences.show');
+Route::post('/email/preferences/{user}', [EmailPreferenceController::class, 'update'])
+    ->name('email-preferences.update');
 
 Route::prefix('admin')
     ->name('admin.')

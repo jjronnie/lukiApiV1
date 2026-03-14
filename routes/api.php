@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\V1\Catalog\ServiceCatalogController;
 use App\Http\Controllers\Api\V1\Catalog\ServiceCategoryController;
 use App\Http\Controllers\Api\V1\Catalog\HomeAdvertController;
 use App\Http\Controllers\Api\V1\Dispute\DisputeController;
+use App\Http\Controllers\Api\V1\Notification\DeviceTokenController;
+use App\Http\Controllers\Api\V1\Notification\NotificationController;
 use App\Http\Controllers\Api\V1\Order\OrderRatingController;
 use App\Http\Controllers\Api\V1\Order\UserOrderController;
 use App\Http\Controllers\Api\V1\Pricing\PriceEstimateController;
@@ -17,7 +19,9 @@ use App\Http\Controllers\Api\V1\Provider\ProviderOfferController;
 use App\Http\Controllers\Api\V1\Provider\ProviderOrderController;
 use App\Http\Controllers\Api\V1\Provider\ProviderProfileController;
 use App\Http\Controllers\Api\V1\Provider\ProviderServiceController;
+use App\Http\Controllers\Api\V1\Provider\ProviderVerificationController;
 use App\Http\Controllers\Api\V1\User\CustomerProfileController;
+use App\Http\Controllers\Api\V1\User\EmailPreferenceController;
 use App\Http\Controllers\Api\V1\User\UserIdentityVerificationController;
 use App\Http\Controllers\Api\V1\User\UserIdentityVerificationSessionController;
 use Illuminate\Support\Facades\Route;
@@ -54,23 +58,40 @@ Route::prefix('v1')->group(function () {
     Route::post('/price/estimate', PriceEstimateController::class);
 
     Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('/devices/fcm-token', [DeviceTokenController::class, 'store']);
+        Route::delete('/devices/fcm-token', [DeviceTokenController::class, 'destroy']);
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::post('/notifications/test', [NotificationController::class, 'test']);
+        Route::post('/notifications/{notificationRecord}/read', [NotificationController::class, 'markRead']);
+
         Route::prefix('provider')->group(function () {
             Route::post('/profile', [ProviderProfileController::class, 'upsert'])->middleware('role:provider');
 
             Route::middleware('role:provider')->group(function () {
                 Route::post('/documents', [ProviderDocumentController::class, 'store']);
                 Route::post('/services', [ProviderServiceController::class, 'sync']);
+                Route::get('/verification', [ProviderVerificationController::class, 'show']);
+                Route::post('/verification/session', [ProviderVerificationController::class, 'storeSession'])
+                    ->middleware('throttle:auth-api');
                 Route::post('/availability/online', [ProviderAvailabilityController::class, 'online']);
                 Route::post('/availability/offline', [ProviderAvailabilityController::class, 'offline']);
                 Route::post('/heartbeat', [ProviderAvailabilityController::class, 'heartbeat']);
                 Route::get('/offers', [ProviderOfferController::class, 'index']);
+                Route::post('/offers/{order_public_id}/skip', [ProviderOfferController::class, 'skip']);
                 Route::post('/offers/{order_public_id}/accept', [ProviderOfferController::class, 'accept']);
+                Route::get('/orders', [ProviderOrderController::class, 'index']);
+                Route::get('/orders/active', [ProviderOrderController::class, 'active']);
+                Route::get('/orders/{order_public_id}', [ProviderOrderController::class, 'show']);
                 Route::post('/orders/{order_public_id}/status', [ProviderOrderController::class, 'updateStatus']);
+                Route::post('/orders/{order_public_id}/cancel', [ProviderOrderController::class, 'cancel']);
+                Route::post('/orders/{order_public_id}/location', [ProviderOrderController::class, 'updateLocation']);
             });
         });
 
         Route::middleware('role:user')->group(function () {
             Route::post('/customer/profile', [CustomerProfileController::class, 'upsert']);
+            Route::get('/customer/email-preferences', [EmailPreferenceController::class, 'show']);
+            Route::post('/customer/email-preferences', [EmailPreferenceController::class, 'update']);
             Route::get('/customer/verification', [UserIdentityVerificationController::class, 'show']);
             Route::post('/customer/verification', [UserIdentityVerificationController::class, 'store']);
             Route::post('/customer/verification/session', [UserIdentityVerificationSessionController::class, 'store'])

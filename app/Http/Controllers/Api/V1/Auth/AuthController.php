@@ -12,10 +12,12 @@ use App\Http\Requests\Api\V1\Auth\ResendOtpRequest;
 use App\Http\Requests\Api\V1\Auth\VerifyEmailOtpRequest;
 use App\Http\Requests\Api\V1\Auth\VerifyLoginOtpRequest;
 use App\Http\Resources\UserResource;
+use App\Models\ProviderProfile;
 use App\Models\RefreshToken;
 use App\Models\User;
 use App\Services\AuthTokenService;
 use App\Services\EmailOtpService;
+use App\Services\UserEmailPreferenceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -27,6 +29,7 @@ class AuthController extends Controller
     public function __construct(
         private readonly AuthTokenService $authTokenService,
         private readonly EmailOtpService $emailOtpService,
+        private readonly UserEmailPreferenceService $userEmailPreferenceService,
     ) {}
 
     public function register(RegisterRequest $request): JsonResponse
@@ -127,7 +130,11 @@ class AuthController extends Controller
             return $error;
         }
 
+        $user = $this->prepareUserForMobileResponse($user, $appType);
+
         $tokens = $this->authTokenService->issue($user, $request);
+
+        $user = $this->prepareUserForMobileResponse($user, $appType);
 
         return response()->json([
             ...$tokens,
@@ -166,6 +173,8 @@ class AuthController extends Controller
         $user->forceFill(['last_seen_at' => now()])->save();
 
         $tokens = $this->authTokenService->issue($user, $request);
+
+        $user = $this->prepareUserForMobileResponse($user, $appType);
 
         return response()->json([
             ...$tokens,
@@ -245,8 +254,12 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
+        $user = $request->user();
+        $appType = MobileAppType::fromRequest($request);
+        $user = $this->prepareUserForMobileResponse($user, $appType);
+
         return response()->json([
-            'user' => new UserResource($request->user()->load($this->userRelations())),
+            'user' => new UserResource($user->load($this->userRelations())),
         ]);
     }
 
@@ -304,9 +317,30 @@ class AuthController extends Controller
         return [
             'roles',
             'identityVerification',
+            'providerIdentityVerification',
+            'emailPreference',
             'providerProfile',
+            'providerProfile.availability',
             'providerProfile.providerServices.service.category',
             'providerProfile.providerServices.eligibleTiers',
         ];
+    }
+
+    private function prepareUserForMobileResponse(User $user, MobileAppType $appType): User
+    {
+        $this->userEmailPreferenceService->ensureForUser($user);
+
+        if ($appType === MobileAppType::Provider) {
+            ProviderProfile::query()->firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'provider_type' => 'individual',
+                    'display_name' => $user->name !== '' ? $user->name : $user->email,
+                    'verification_status' => \App\Enums\ProviderVerificationStatus::Pending,
+                ],
+            );
+        }
+
+        return $user->fresh() ?? $user;
     }
 }

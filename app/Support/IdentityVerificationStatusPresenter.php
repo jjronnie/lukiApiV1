@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\UserIdentityVerificationStatus;
+use App\Enums\VerificationSessionFlow;
 use App\Enums\VerificationSessionStatus;
 use App\Http\Resources\UserIdentityVerificationResource;
 use App\Http\Resources\VerificationSessionResource;
@@ -24,6 +25,7 @@ class IdentityVerificationStatusPresenter
 
         $activeSession = VerificationSession::query()
             ->where('user_id', $user->id)
+            ->where('flow', VerificationSessionFlow::CustomerIdentity)
             ->where('status', VerificationSessionStatus::Open)
             ->where('expires_at', '>', now())
             ->latest('created_at')
@@ -31,6 +33,7 @@ class IdentityVerificationStatusPresenter
 
         $latestSession = VerificationSession::query()
             ->where('user_id', $user->id)
+            ->where('flow', VerificationSessionFlow::CustomerIdentity)
             ->latest('created_at')
             ->first();
 
@@ -62,6 +65,7 @@ class IdentityVerificationStatusPresenter
     {
         VerificationSession::query()
             ->where('user_id', $userId)
+            ->where('flow', VerificationSessionFlow::CustomerIdentity)
             ->where('status', VerificationSessionStatus::Open)
             ->where('expires_at', '<=', now())
             ->update([

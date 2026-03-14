@@ -41,4 +41,10 @@ return [
         'web_client_id' => env('GOOGLE_WEB_CLIENT_ID'),
     ],
 
+    'firebase' => [
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+        'service_account_path' => env('FIREBASE_SERVICE_ACCOUNT_PATH'),
+        'service_account_json' => env('FIREBASE_SERVICE_ACCOUNT_JSON'),
+    ],
+
 ];

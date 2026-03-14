@@ -18,11 +18,14 @@ class UpsertProviderProfileRequest extends FormRequest
     {
         return [
             'provider_type' => ['required', 'string', 'in:individual,business'],
-            'display_name' => ['required', 'string', 'max:120'],
+            'display_name' => ['nullable', 'string', 'max:120'],
             'legal_name' => ['nullable', 'string', 'max:160'],
             'bio' => ['nullable', 'string', 'max:1000'],
-            'service_public_ids' => ['nullable', 'array'],
-            'service_public_ids.*' => ['string', 'exists:services,public_id'],
+            'phone' => ['required', 'string', 'max:32'],
+            'address_text' => ['required', 'string', 'max:255'],
+            'business_name' => ['nullable', 'string', 'max:160'],
+            'business_address' => ['nullable', 'string', 'max:255'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
 }

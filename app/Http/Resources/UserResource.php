@@ -38,14 +38,28 @@ class UserResource extends JsonResource
                     'display_name' => $this->providerProfile->display_name,
                     'avatar_url' => $this->providerProfile->avatar_url,
                     'provider_type' => $this->providerProfile->provider_type,
+                    'phone' => $this->providerProfile->phone,
+                    'address_text' => $this->providerProfile->address_text,
+                    'business_name' => $this->providerProfile->business_name,
+                    'business_address' => $this->providerProfile->business_address,
+                    'onboarding_completed_at' => $this->providerProfile->onboarding_completed_at,
+                    'is_onboarding_complete' => $this->providerProfile->onboarding_completed_at !== null,
                     'verification_status' => $this->providerProfile->verification_status?->value ?? $this->providerProfile->verification_status,
                     'rejection_reason' => $this->providerProfile->rejection_reason,
                     'rating' => $this->providerProfile->rating_avg,
                     'reviews_count' => $this->providerProfile->rating_count,
+                    'completed_orders_count' => $this->providerProfile->completed_orders_count,
+                    'cancelled_orders_count' => $this->providerProfile->cancelled_orders_count,
+                    'is_online' => (bool) ($this->providerProfile->availability?->is_online ?? false),
+                    'last_seen_at' => $this->providerProfile->availability?->last_seen_at,
                     'offered_services' => $this->when(
                         $this->providerProfile->relationLoaded('providerServices'),
                         fn () => $this->providerProfile->providerServices->map(function ($providerService) {
                             return [
+                                'public_id' => $providerService->id,
+                                'is_active' => $providerService->is_active,
+                                'approval_status' => $providerService->approval_status?->value ?? $providerService->approval_status,
+                                'review_reason' => $providerService->review_reason,
                                 'service' => $providerService->relationLoaded('service') && $providerService->service !== null ? [
                                     'public_id' => $providerService->service->public_id,
                                     'name' => $providerService->service->name,
@@ -64,6 +78,21 @@ class UserResource extends JsonResource
                 'identityVerification',
                 fn () => $this->identityVerification === null ? null : new UserIdentityVerificationResource($this->identityVerification)
             ),
+            'provider_identity_verification' => $this->whenLoaded(
+                'providerIdentityVerification',
+                fn () => $this->providerIdentityVerification === null ? null : new ProviderIdentityVerificationResource($this->providerIdentityVerification)
+            ),
+            'email_preferences' => $this->whenLoaded('emailPreference', function () {
+                if ($this->emailPreference === null) {
+                    return null;
+                }
+
+                return [
+                    'marketing_emails_enabled' => $this->emailPreference->marketing_emails_enabled,
+                    'booking_emails_enabled' => $this->emailPreference->booking_emails_enabled,
+                    'authentication_emails_enabled' => $this->emailPreference->authentication_emails_enabled,
+                ];
+            }),
         ];
     }
 }

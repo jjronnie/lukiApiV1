@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\User;
 
 use App\Enums\UserIdentityVerificationStatus;
+use App\Enums\VerificationSessionFlow;
 use App\Enums\VerificationSessionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\VerificationSession;
@@ -38,6 +39,7 @@ class UserIdentityVerificationSessionController extends Controller
         $session = DB::transaction(function () use ($request, $user) {
             VerificationSession::query()
                 ->where('user_id', $user->id)
+                ->where('flow', VerificationSessionFlow::CustomerIdentity)
                 ->where('status', VerificationSessionStatus::Open)
                 ->where('expires_at', '<=', now())
                 ->update([
@@ -47,6 +49,7 @@ class UserIdentityVerificationSessionController extends Controller
 
             $reusableSession = VerificationSession::query()
                 ->where('user_id', $user->id)
+                ->where('flow', VerificationSessionFlow::CustomerIdentity)
                 ->where('status', VerificationSessionStatus::Open)
                 ->where('expires_at', '>', now())
                 ->latest('created_at')
@@ -55,6 +58,7 @@ class UserIdentityVerificationSessionController extends Controller
             if ($reusableSession !== null) {
                 VerificationSession::query()
                     ->where('user_id', $user->id)
+                    ->where('flow', VerificationSessionFlow::CustomerIdentity)
                     ->where('status', VerificationSessionStatus::Open)
                     ->where('expires_at', '>', now())
                     ->whereKeyNot($reusableSession->id)
@@ -70,6 +74,7 @@ class UserIdentityVerificationSessionController extends Controller
             return VerificationSession::query()->create([
                 'user_id' => $user->id,
                 'session_key' => Str::random(64),
+                'flow' => VerificationSessionFlow::CustomerIdentity,
                 'status' => VerificationSessionStatus::Open,
                 'expires_at' => now()->addMinutes(15),
                 'ip_address' => $request->ip(),

@@ -10,6 +10,7 @@ use App\Http\Requests\Admin\ReviewUserIdentityVerificationRequest;
 use App\Models\UserIdentityVerification;
 use App\Models\VerificationSession;
 use App\Services\AuditLogService;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -17,7 +18,10 @@ use Illuminate\View\View;
 
 class UserIdentityVerificationController extends Controller
 {
-    public function __construct(private readonly AuditLogService $auditLogService) {}
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly NotificationDispatcher $notificationDispatcher,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -80,6 +84,24 @@ class UserIdentityVerificationController extends Controller
             meta: ['status' => $status->value],
             request: $request,
         );
+
+        $verification->loadMissing('user');
+        if ($verification->user !== null) {
+            $isApproved = $status === UserIdentityVerificationStatus::Approved;
+
+            $this->notificationDispatcher->sendToUser(
+                $verification->user,
+                \App\Enums\MobileAppType::Customer,
+                $isApproved ? 'verification_approved' : 'verification_rejected',
+                $isApproved ? 'Verification approved' : 'Verification rejected',
+                $isApproved
+                    ? 'Your account verification was approved successfully.'
+                    : ($data['rejection_reason'] ?? 'Your verification was rejected. Please review the feedback and try again.'),
+                [
+                    'screen' => 'verification',
+                ],
+            );
+        }
 
         return redirect()
             ->route('admin.user-identity-verifications.show', $verification)

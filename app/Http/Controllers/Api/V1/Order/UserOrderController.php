@@ -16,6 +16,7 @@ use App\Models\Service;
 use App\Models\ServiceTier;
 use App\Services\DispatchService;
 use App\Services\IdempotencyService;
+use App\Services\NotificationDispatcher;
 use App\Services\PriceEstimateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ class UserOrderController extends Controller
         private readonly PriceEstimateService $priceEstimateService,
         private readonly DispatchService $dispatchService,
         private readonly IdempotencyService $idempotencyService,
+        private readonly NotificationDispatcher $notificationDispatcher,
     ) {}
 
     public function store(StoreOrderRequest $request): JsonResponse
@@ -185,11 +187,7 @@ class UserOrderController extends Controller
                     (int) config('luki.dispatch.offer_expiry_seconds', 30),
                 );
             } else {
-                $offersCreated = $this->dispatchService->offerInBatches(
-                    $order,
-                    (int) config('luki.dispatch.offer_batch_size', 3),
-                    (int) config('luki.dispatch.offer_expiry_seconds', 15),
-                );
+                $offersCreated = $this->dispatchService->startOrderDispatch($order);
 
                 if ($offersCreated === 0) {
                     $order = $this->dispatchService->syncSearchState($order);
@@ -227,6 +225,11 @@ class UserOrderController extends Controller
 
         $orders = Order::query()
             ->where('user_id', auth()->id())
+            ->where(function ($query) {
+                $query->where('status', '!=', OrderStatus::Expired->value)
+                    ->orWhereNull('cancellation_reason')
+                    ->orWhere('cancellation_reason', '!=', 'failed_to_find_provider');
+            })
             ->with(['items.addOn', 'providerProfile.user', 'providerProfile.availability', 'service.category', 'serviceTier'])
             ->latest()
             ->paginate(20);
@@ -334,11 +337,18 @@ class UserOrderController extends Controller
         $order = Order::query()
             ->where('public_id', $publicId)
             ->where('user_id', $request->user()->id)
-            ->with(['providerProfile', 'service.category', 'serviceTier'])
+            ->with(['providerProfile.user', 'service.category', 'serviceTier'])
             ->firstOrFail();
 
         if (in_array($order->status, [OrderStatus::Completed, OrderStatus::Cancelled, OrderStatus::Expired, OrderStatus::InService], true)) {
             return response()->json(['message' => 'Order cannot be cancelled in current status.'], 422);
+        }
+
+        if (in_array($order->status, [OrderStatus::Accepted, OrderStatus::OnTheWay, OrderStatus::Arrived], true)
+            && blank($request->validated('reason'))) {
+            return response()->json([
+                'message' => 'Please provide a cancellation reason for an accepted order.',
+            ], 422);
         }
 
         $cancelFee = 0;
@@ -373,6 +383,21 @@ class UserOrderController extends Controller
             ],
             'created_at' => now(),
         ]);
+
+        if ($order->providerProfile?->user !== null) {
+            $this->notificationDispatcher->sendToUser(
+                $order->providerProfile->user,
+                \App\Enums\MobileAppType::Provider,
+                'order_cancelled',
+                'Order cancelled',
+                'A customer cancelled an order that was assigned to you.',
+                [
+                    'screen' => 'provider_orders',
+                    'order_id' => $order->public_id,
+                ],
+                $order->providerProfile,
+            );
+        }
 
         return response()->json([
             'message' => 'Order cancelled.',

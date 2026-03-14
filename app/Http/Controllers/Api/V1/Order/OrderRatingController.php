@@ -7,11 +7,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\RateOrderRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
+use App\Services\ProviderRatingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class OrderRatingController extends Controller
 {
+    public function __construct(
+        private readonly ProviderRatingService $providerRatingService,
+    ) {}
+
     public function store(RateOrderRequest $request, string $publicId): JsonResponse
     {
         $data = $request->validated();
@@ -36,18 +41,11 @@ class OrderRatingController extends Controller
                 'provider_review' => $data['review'] ?? null,
                 'rated_at' => now(),
             ]);
-
-            $profile = $order->providerProfile;
-            if ($profile !== null) {
-                $newCount = $profile->rating_count + 1;
-                $newAverage = (($profile->rating_avg * $profile->rating_count) + $data['rating']) / $newCount;
-
-                $profile->update([
-                    'rating_count' => $newCount,
-                    'rating_avg' => round($newAverage, 2),
-                ]);
-            }
         });
+
+        if ($order->providerProfile !== null) {
+            $this->providerRatingService->refresh($order->providerProfile->fresh() ?? $order->providerProfile);
+        }
 
         return response()->json([
             'message' => 'Rating submitted.',

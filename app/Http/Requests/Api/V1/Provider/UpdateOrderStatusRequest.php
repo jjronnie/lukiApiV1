@@ -17,7 +17,7 @@ class UpdateOrderStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'string', 'in:on_the_way,arrived,in_service,completed'],
+            'status' => ['required', 'string', 'in:on_the_way,arrived,in_service,started_working,completed'],
             'mark_paid' => ['nullable', 'boolean'],
             'idempotency_key' => ['nullable', 'string', 'max:120'],
         ];

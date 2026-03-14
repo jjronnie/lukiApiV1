@@ -27,6 +27,8 @@ class SyncProviderServiceEligibilityRequest extends FormRequest
         $this->merge([
             'service_ids' => $serviceIds,
             'tiers_by_service' => $tiersByService,
+            'service_statuses' => (array) $this->input('service_statuses', []),
+            'service_review_reasons' => (array) $this->input('service_review_reasons', []),
         ]);
     }
 
@@ -47,6 +49,10 @@ class SyncProviderServiceEligibilityRequest extends FormRequest
             'tiers_by_service' => ['nullable', 'array'],
             'tiers_by_service.*' => ['nullable', 'array'],
             'tiers_by_service.*.*' => ['integer', 'exists:service_tiers,id'],
+            'service_statuses' => ['nullable', 'array'],
+            'service_statuses.*' => ['nullable', 'string', 'in:approved,declined,pending'],
+            'service_review_reasons' => ['nullable', 'array'],
+            'service_review_reasons.*' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

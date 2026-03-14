@@ -11,8 +11,16 @@ return [
         'otp_max_attempts' => (int) env('LUKI_OTP_MAX_ATTEMPTS', 5),
     ],
     'dispatch' => [
-        'offer_batch_size' => (int) env('LUKI_DISPATCH_BATCH_SIZE', 3),
-        'offer_expiry_seconds' => (int) env('LUKI_DISPATCH_OFFER_EXPIRY_SECONDS', 15),
+        'offer_batch_size' => (int) env('LUKI_DISPATCH_BATCH_SIZE', 5),
+        'offer_expiry_seconds' => (int) env('LUKI_DISPATCH_OFFER_EXPIRY_SECONDS', 30),
+        'taken_visibility_seconds' => (int) env('LUKI_DISPATCH_TAKEN_VISIBILITY_SECONDS', 45),
+        'location_freshness_seconds' => (int) env('LUKI_PROVIDER_LOCATION_FRESHNESS_SECONDS', 180),
     ],
     'cancellation_fee_amount' => (int) env('LUKI_CANCELLATION_FEE_AMOUNT', 2000),
+    'tracking' => [
+        'default_travel_speed_kph' => (int) env('LUKI_DEFAULT_TRAVEL_SPEED_KPH', 25),
+    ],
+    'email_preferences' => [
+        'signed_url_days' => (int) env('LUKI_EMAIL_PREFERENCES_SIGNED_URL_DAYS', 30),
+    ],
 ];

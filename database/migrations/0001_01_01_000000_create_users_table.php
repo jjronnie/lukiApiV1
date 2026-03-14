@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->ulid('public_id')->unique();
             $table->string('name');
+            $table->string('first_name', 60)->nullable();
+            $table->string('last_name', 60)->nullable();
             $table->string('email')->unique();
             $table->timestampTz('email_verified_at')->nullable();
             $table->string('password');

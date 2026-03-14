@@ -9,6 +9,8 @@ use App\Http\Resources\OrderResource;
 use App\Http\Resources\ProviderOfferResource;
 use App\Models\Order;
 use App\Models\OrderOffer;
+use App\Services\DispatchService;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Cache;
@@ -16,6 +18,11 @@ use Illuminate\Support\Facades\DB;
 
 class ProviderOfferController extends Controller
 {
+    public function __construct(
+        private readonly DispatchService $dispatchService,
+        private readonly NotificationDispatcher $notificationDispatcher,
+    ) {}
+
     public function index(): AnonymousResourceCollection
     {
         $profile = auth()->user()->providerProfile()->firstOrFail();
@@ -23,12 +30,47 @@ class ProviderOfferController extends Controller
         $offers = OrderOffer::query()
             ->with(['order.user', 'order.service.category', 'order.serviceTier'])
             ->where('provider_profile_id', $profile->id)
-            ->where('status', 'pending')
-            ->where('expires_at', '>', now())
+            ->where(function ($query) {
+                $query->where(function ($pendingQuery) {
+                    $pendingQuery
+                        ->where('status', 'pending')
+                        ->where('expires_at', '>', now());
+                })->orWhere(function ($takenQuery) {
+                    $takenQuery
+                        ->where('status', 'taken')
+                        ->where('responded_at', '>=', now()->subSeconds(
+                            (int) config('luki.dispatch.taken_visibility_seconds', 45)
+                        ));
+                });
+            })
             ->latest('created_at')
             ->get();
 
         return ProviderOfferResource::collection($offers);
+    }
+
+    public function skip(string $orderPublicId): JsonResponse
+    {
+        $providerProfile = auth()->user()->providerProfile()->firstOrFail();
+
+        $offer = OrderOffer::query()
+            ->whereHas('order', fn ($query) => $query->where('public_id', $orderPublicId))
+            ->where('provider_profile_id', $providerProfile->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($offer === null) {
+            return response()->json(['message' => 'Offer is no longer available.'], 422);
+        }
+
+        $offer->update([
+            'status' => 'skipped',
+            'responded_at' => now(),
+        ]);
+
+        $this->dispatchService->refillPendingOffers($offer->order);
+
+        return response()->json(['message' => 'Offer skipped.']);
     }
 
     public function accept(AcceptOfferRequest $request, string $orderPublicId): JsonResponse
@@ -45,6 +87,15 @@ class ProviderOfferController extends Controller
                     ->firstOrFail();
 
                 if (in_array($order->status, [OrderStatus::Accepted, OrderStatus::OnTheWay, OrderStatus::Arrived, OrderStatus::InService, OrderStatus::Completed], true)) {
+                    OrderOffer::query()
+                        ->where('order_id', $order->id)
+                        ->where('provider_profile_id', $providerProfile->id)
+                        ->where('status', 'pending')
+                        ->update([
+                            'status' => 'taken',
+                            'responded_at' => now(),
+                        ]);
+
                     abort(422, 'Order has already been accepted or completed.');
                 }
 
@@ -78,7 +129,7 @@ class ProviderOfferController extends Controller
                     ->where('id', '!=', $offer->id)
                     ->where('status', 'pending')
                     ->update([
-                        'status' => 'expired',
+                        'status' => 'taken',
                         'responded_at' => now(),
                     ]);
 
@@ -98,9 +149,24 @@ class ProviderOfferController extends Controller
             return response()->json(['message' => 'Order acceptance is currently locked.'], 423);
         }
 
+        $executed->loadMissing('user');
+        if ($executed->user !== null) {
+            $this->notificationDispatcher->sendToUser(
+                $executed->user,
+                \App\Enums\MobileAppType::Customer,
+                'order_matched',
+                'Provider matched',
+                'A provider accepted your booking request.',
+                [
+                    'screen' => 'order_detail',
+                    'order_id' => $executed->public_id,
+                ],
+            );
+        }
+
         return response()->json([
             'message' => 'Offer accepted.',
-            'order' => new OrderResource($executed->load(['items', 'providerProfile', 'service.category', 'serviceTier'])),
+            'order' => new OrderResource($executed->load(['items', 'providerProfile.user', 'service.category', 'serviceTier', 'user'])),
         ]);
     }
 }

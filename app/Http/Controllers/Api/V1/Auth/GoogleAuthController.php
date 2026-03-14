@@ -7,8 +7,10 @@ use App\Enums\RoleName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\GoogleAuthRequest;
 use App\Http\Resources\UserResource;
+use App\Models\ProviderProfile;
 use App\Models\User;
 use App\Services\AuthTokenService;
+use App\Services\UserEmailPreferenceService;
 use Google\Client as GoogleClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
@@ -19,6 +21,7 @@ class GoogleAuthController extends Controller
 {
     public function __construct(
         private readonly AuthTokenService $authTokenService,
+        private readonly UserEmailPreferenceService $userEmailPreferenceService,
     ) {}
 
     public function login(GoogleAuthRequest $request): JsonResponse
@@ -142,6 +145,18 @@ class GoogleAuthController extends Controller
             'last_seen_at' => now(),
         ])->save();
 
+        $this->userEmailPreferenceService->ensureForUser($user);
+        if ($appType === MobileAppType::Provider) {
+            ProviderProfile::query()->firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'provider_type' => 'individual',
+                    'display_name' => $user->name !== '' ? $user->name : $user->email,
+                    'verification_status' => \App\Enums\ProviderVerificationStatus::Pending,
+                ],
+            );
+        }
+
         $tokens = $this->authTokenService->issue($user, $request);
         $user->load($this->userRelations());
 
@@ -171,7 +186,10 @@ class GoogleAuthController extends Controller
         return [
             'roles',
             'identityVerification',
+            'providerIdentityVerification',
+            'emailPreference',
             'providerProfile',
+            'providerProfile.availability',
             'providerProfile.providerServices.service.category',
             'providerProfile.providerServices.eligibleTiers',
         ];

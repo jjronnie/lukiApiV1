@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProviderServiceApprovalStatus;
 use App\Enums\ProviderVerificationStatus;
 use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,7 +27,13 @@ class ProviderProfile extends Model
         'display_name',
         'legal_name',
         'bio',
+        'phone',
+        'address_text',
+        'business_name',
+        'business_address',
+        'onboarding_completed_at',
         'avatar_path',
+        'avatar_locked_at',
         'verification_status',
         'verified_at',
         'rejection_reason',
@@ -44,6 +51,8 @@ class ProviderProfile extends Model
         return [
             'provider_number' => 'integer',
             'verified_at' => 'datetime',
+            'onboarding_completed_at' => 'datetime',
+            'avatar_locked_at' => 'datetime',
             'rating_avg' => 'decimal:2',
             'rating_count' => 'integer',
             'completed_orders_count' => 'integer',
@@ -110,6 +119,7 @@ class ProviderProfile extends Model
     public function scopeEligibleForMarketplace(Builder $query): Builder
     {
         return $query
+            ->whereNotNull('onboarding_completed_at')
             ->where('verification_status', ProviderVerificationStatus::Approved->value)
             ->whereHas('wallet', function ($walletQuery) {
                 $walletQuery->where('status', 'active')
@@ -142,10 +152,17 @@ class ProviderProfile extends Model
                 ?? $this->providerServices()->create([
                     'service_id' => $serviceId,
                     'is_active' => true,
+                    'approval_status' => ProviderServiceApprovalStatus::Approved,
+                    'requested_at' => now(),
                 ]);
 
-            if (! $providerService->is_active) {
-                $providerService->update(['is_active' => true]);
+            if (! $providerService->is_active || $providerService->approval_status !== ProviderServiceApprovalStatus::Approved) {
+                $providerService->update([
+                    'is_active' => true,
+                    'approval_status' => ProviderServiceApprovalStatus::Approved,
+                    'reviewed_at' => now(),
+                    'review_reason' => null,
+                ]);
             }
 
             $keptProviderServiceIds[] = $providerService->id;
@@ -182,7 +199,55 @@ class ProviderProfile extends Model
 
         $this->providerServices()
             ->whereNotIn('id', $keptProviderServiceIds === [] ? [-1] : $keptProviderServiceIds)
-            ->delete();
+            ->update([
+                'is_active' => false,
+            ]);
+    }
+
+    /**
+     * @param  array<int, int>  $serviceIds
+     */
+    public function syncRequestedServices(array $serviceIds): void
+    {
+        $normalizedServiceIds = collect($serviceIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values();
+
+        $existingServices = $this->providerServices()->get()->keyBy('service_id');
+        $keptProviderServiceIds = [];
+
+        foreach ($normalizedServiceIds as $serviceId) {
+            /** @var ProviderService $providerService */
+            $providerService = $existingServices->get($serviceId)
+                ?? $this->providerServices()->create([
+                    'service_id' => $serviceId,
+                    'is_active' => true,
+                    'approval_status' => ProviderServiceApprovalStatus::Pending,
+                    'requested_at' => now(),
+                ]);
+
+            $keptProviderServiceIds[] = $providerService->id;
+
+            $approvalStatus = $providerService->approval_status?->value ?? $providerService->approval_status;
+            if ($approvalStatus !== ProviderServiceApprovalStatus::Approved->value) {
+                $providerService->update([
+                    'is_active' => true,
+                    'approval_status' => ProviderServiceApprovalStatus::Pending,
+                    'requested_at' => now(),
+                    'reviewed_by' => null,
+                    'reviewed_at' => null,
+                    'review_reason' => null,
+                ]);
+            } elseif (! $providerService->is_active) {
+                $providerService->update(['is_active' => true]);
+            }
+        }
+
+        $this->providerServices()
+            ->whereNotIn('id', $keptProviderServiceIds === [] ? [-1] : $keptProviderServiceIds)
+            ->update(['is_active' => false]);
     }
 
     private static function generateProviderNumber(int $providerProfileId): int
@@ -214,5 +279,10 @@ class ProviderProfile extends Model
         }
 
         return Storage::disk('public')->url($this->avatar_path);
+    }
+
+    public function getIsOnboardingCompleteAttribute(): bool
+    {
+        return $this->onboarding_completed_at !== null;
     }
 }

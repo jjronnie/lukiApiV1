@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('public_id')->unique();
             $table->string('session_key', 128)->unique();
+            $table->string('flow', 48)->default('customer_identity')->index();
             $table->string('status')->index();
             $table->timestamp('expires_at')->index();
             $table->timestamp('started_at')->nullable();

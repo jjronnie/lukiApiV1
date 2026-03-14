@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\VerificationSessionFlow;
 use App\Enums\VerificationSessionStatus;
 use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,7 @@ class VerificationSession extends Model
         'user_id',
         'public_id',
         'session_key',
+        'flow',
         'status',
         'expires_at',
         'started_at',
@@ -33,6 +35,7 @@ class VerificationSession extends Model
     {
         return [
             'status' => VerificationSessionStatus::class,
+            'flow' => VerificationSessionFlow::class,
             'expires_at' => 'datetime',
             'started_at' => 'datetime',
             'submitted_at' => 'datetime',

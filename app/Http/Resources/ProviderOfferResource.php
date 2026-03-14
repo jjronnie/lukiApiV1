@@ -16,6 +16,7 @@ class ProviderOfferResource extends JsonResource
             'order_public_id' => $this->order->public_id,
             'status' => $this->status,
             'batch_no' => $this->batch_no,
+            'order_status' => $this->order->status?->value ?? $this->order->status,
             'booking_mode' => $this->order->booking_mode?->value ?? $this->order->booking_mode,
             'pair_provider_number' => $this->order->pair_provider_number,
             'service' => [
@@ -28,7 +29,12 @@ class ProviderOfferResource extends JsonResource
             ],
             'customer' => [
                 'name' => $this->order->user?->name,
+                'phone' => $this->order->user?->phone,
                 'address_text' => $this->order->address_text,
+            ],
+            'location' => [
+                'lat' => $this->order->location_lat,
+                'lng' => $this->order->location_lng,
             ],
             'amounts' => [
                 'currency' => data_get($this->order->price_breakdown, 'currency', $this->order->service?->currency ?? 'UGX'),

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Provider;
 
 use App\Enums\ProviderVerificationStatus;
+use App\Enums\ProviderServiceApprovalStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Provider\ProviderHeartbeatRequest;
 use App\Models\ProviderAvailability;
@@ -14,8 +15,21 @@ class ProviderAvailabilityController extends Controller
     {
         $profile = auth()->user()->providerProfile()->with('wallet')->firstOrFail();
 
+        if ($profile->onboarding_completed_at === null) {
+            return response()->json(['message' => 'Complete onboarding before going online.'], 422);
+        }
+
         if ($profile->verification_status !== ProviderVerificationStatus::Approved) {
             return response()->json(['message' => 'Provider is not approved.'], 422);
+        }
+
+        $hasApprovedServices = $profile->providerServices()
+            ->where('is_active', true)
+            ->where('approval_status', ProviderServiceApprovalStatus::Approved->value)
+            ->exists();
+
+        if (! $hasApprovedServices) {
+            return response()->json(['message' => 'No approved services are available for dispatch yet.'], 422);
         }
 
         if ($profile->wallet !== null && ($profile->wallet->balance_amount - $profile->wallet->hold_amount) < $profile->wallet->min_required_amount) {
@@ -55,14 +69,18 @@ class ProviderAvailabilityController extends Controller
         $profile = $request->user()->providerProfile()->firstOrFail();
         $data = $request->validated();
 
-        ProviderAvailability::query()->updateOrCreate(
-            ['provider_profile_id' => $profile->id],
-            [
-                'last_seen_at' => now(),
-                'timezone' => 'Africa/Kampala',
-                'is_online' => true,
-            ]
-        );
+        $availability = ProviderAvailability::query()->firstOrNew([
+            'provider_profile_id' => $profile->id,
+        ]);
+
+        $availability->fill([
+            'last_seen_at' => now(),
+            'timezone' => 'Africa/Kampala',
+        ]);
+        if (! $availability->exists) {
+            $availability->is_online = false;
+        }
+        $availability->save();
 
         $profile->locations()->create([
             'lat' => $data['lat'],
