@@ -18,9 +18,10 @@ use App\Services\DispatchService;
 use App\Services\IdempotencyService;
 use App\Services\NotificationDispatcher;
 use App\Services\PriceEstimateService;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -93,73 +94,109 @@ class UserOrderController extends Controller
             promoCode: $data['promo_code'] ?? null,
         );
 
-        $order = DB::transaction(function () use ($request, $data, $service, $serviceTier, $addOnIds, $breakdown) {
-            $order = Order::query()->create([
-                'user_id' => $request->user()->id,
-                'service_id' => $service->id,
-                'service_tier_id' => $serviceTier->id,
-                'transport_zone_id' => $breakdown['transport_zone_id'] ?? null,
-                'service_name_snapshot' => $service->name,
-                'service_tier_name_snapshot' => $serviceTier->name,
-                'transport_zone_name_snapshot' => $breakdown['transport_zone_name'] ?? null,
-                'status' => OrderStatus::Created,
-                'booking_mode' => $data['booking_mode'],
-                'pair_provider_number' => ($data['booking_mode'] ?? OrderBookingMode::Normal->value) === OrderBookingMode::Pair->value
-                    ? (int) ($data['pair_provider_number'] ?? 0)
-                    : null,
-                'is_scheduled' => $data['is_scheduled'],
-                'scheduled_at' => $data['is_scheduled'] ? $data['scheduled_at'] : null,
-                'address_text' => $data['address_text'],
-                'location_lat' => $data['location_lat'],
-                'location_lng' => $data['location_lng'],
-                'place_id' => $data['place_id'] ?? null,
-                'payment_method' => $data['payment_method'],
-                'payment_status' => PaymentStatus::Unpaid,
-                'subtotal_amount' => $breakdown['subtotal_amount'],
-                'transport_fee_amount' => $breakdown['transport_fee_amount'],
-                'distance_fee_amount' => $breakdown['distance_fee_amount'],
-                'overtime_fee_amount' => $breakdown['overtime_fee_amount'],
-                'peak_fee_amount' => $breakdown['peak_fee_amount'],
-                'tax_amount' => $breakdown['tax_amount'],
-                'discount_amount' => $breakdown['discount_amount'],
-                'total_amount' => $breakdown['total_amount'],
-                'price_breakdown' => $breakdown,
-                'promo_code' => $data['promo_code'] ?? null,
+        $lockKey = sprintf('orders:create:user:%d:service:%d', $request->user()->id, $service->id);
+
+        try {
+            $order = Cache::lock($lockKey, 10)->block(5, function () use (
+                $request,
+                $data,
+                $service,
+                $serviceTier,
+                $addOnIds,
+                $breakdown,
+            ) {
+                return DB::transaction(function () use (
+                    $request,
+                    $data,
+                    $service,
+                    $serviceTier,
+                    $addOnIds,
+                    $breakdown,
+                ) {
+                    $hasActiveSameService = Order::query()
+                        ->where('user_id', $request->user()->id)
+                        ->where('service_id', $service->id)
+                        ->whereIn('status', Order::customerActiveStatusValues())
+                        ->exists();
+
+                    if ($hasActiveSameService) {
+                        throw ValidationException::withMessages([
+                            'service_public_id' => ['Finish your current booking for this service before placing another one.'],
+                        ]);
+                    }
+
+                    $order = Order::query()->create([
+                        'user_id' => $request->user()->id,
+                        'service_id' => $service->id,
+                        'service_tier_id' => $serviceTier->id,
+                        'transport_zone_id' => $breakdown['transport_zone_id'] ?? null,
+                        'service_name_snapshot' => $service->name,
+                        'service_tier_name_snapshot' => $serviceTier->name,
+                        'transport_zone_name_snapshot' => $breakdown['transport_zone_name'] ?? null,
+                        'status' => OrderStatus::Created,
+                        'booking_mode' => $data['booking_mode'],
+                        'pair_provider_number' => ($data['booking_mode'] ?? OrderBookingMode::Normal->value) === OrderBookingMode::Pair->value
+                            ? (int) ($data['pair_provider_number'] ?? 0)
+                            : null,
+                        'is_scheduled' => $data['is_scheduled'],
+                        'scheduled_at' => $data['is_scheduled'] ? $data['scheduled_at'] : null,
+                        'address_text' => $data['address_text'],
+                        'location_lat' => $data['location_lat'],
+                        'location_lng' => $data['location_lng'],
+                        'place_id' => $data['place_id'] ?? null,
+                        'payment_method' => $data['payment_method'],
+                        'payment_status' => PaymentStatus::Unpaid,
+                        'subtotal_amount' => $breakdown['subtotal_amount'],
+                        'transport_fee_amount' => $breakdown['transport_fee_amount'],
+                        'distance_fee_amount' => $breakdown['distance_fee_amount'],
+                        'overtime_fee_amount' => $breakdown['overtime_fee_amount'],
+                        'peak_fee_amount' => $breakdown['peak_fee_amount'],
+                        'tax_amount' => $breakdown['tax_amount'],
+                        'discount_amount' => $breakdown['discount_amount'],
+                        'total_amount' => $breakdown['total_amount'],
+                        'price_breakdown' => $breakdown,
+                        'promo_code' => $data['promo_code'] ?? null,
+                    ]);
+
+                    $order->items()->create([
+                        'item_type' => 'service',
+                        'service_id' => $service->id,
+                        'name_snapshot' => $service->name,
+                        'service_tier_id' => $serviceTier->id,
+                        'tier_name_snapshot' => $serviceTier->name,
+                        'unit_price_amount' => $serviceTier->price_amount,
+                        'quantity' => 1,
+                        'line_total_amount' => $serviceTier->price_amount,
+                    ]);
+
+                    $addOns = $service->addOns()->whereIn('id', $addOnIds)->where('is_active', true)->get();
+                    foreach ($addOns as $addOn) {
+                        $order->items()->create([
+                            'item_type' => 'add_on',
+                            'add_on_id' => $addOn->id,
+                            'name_snapshot' => $addOn->name,
+                            'unit_price_amount' => $addOn->price_amount,
+                            'quantity' => 1,
+                            'line_total_amount' => $addOn->price_amount,
+                        ]);
+                    }
+
+                    $order->statusHistories()->create([
+                        'from_status' => null,
+                        'to_status' => OrderStatus::Created->value,
+                        'changed_by_user_id' => $request->user()->id,
+                        'meta' => ['source' => 'user_order_create'],
+                        'created_at' => now(),
+                    ]);
+
+                    return $order;
+                });
+            });
+        } catch (LockTimeoutException) {
+            throw ValidationException::withMessages([
+                'service_public_id' => ['We are still finishing your previous booking request. Please try again in a moment.'],
             ]);
-
-            $order->items()->create([
-                'item_type' => 'service',
-                'service_id' => $service->id,
-                'name_snapshot' => $service->name,
-                'service_tier_id' => $serviceTier->id,
-                'tier_name_snapshot' => $serviceTier->name,
-                'unit_price_amount' => $serviceTier->price_amount,
-                'quantity' => 1,
-                'line_total_amount' => $serviceTier->price_amount,
-            ]);
-
-            $addOns = $service->addOns()->whereIn('id', $addOnIds)->where('is_active', true)->get();
-            foreach ($addOns as $addOn) {
-                $order->items()->create([
-                    'item_type' => 'add_on',
-                    'add_on_id' => $addOn->id,
-                    'name_snapshot' => $addOn->name,
-                    'unit_price_amount' => $addOn->price_amount,
-                    'quantity' => 1,
-                    'line_total_amount' => $addOn->price_amount,
-                ]);
-            }
-
-            $order->statusHistories()->create([
-                'from_status' => null,
-                'to_status' => OrderStatus::Created->value,
-                'changed_by_user_id' => $request->user()->id,
-                'meta' => ['source' => 'user_order_create'],
-                'created_at' => now(),
-            ]);
-
-            return $order;
-        });
+        }
 
         $isPairBooking = (($data['booking_mode'] ?? OrderBookingMode::Normal->value) === OrderBookingMode::Pair->value);
 
@@ -243,18 +280,9 @@ class UserOrderController extends Controller
     {
         $limitPerSection = max(1, min((int) $request->integer('limit_per_section', 5), 10));
         $relations = ['items.addOn', 'providerProfile.user', 'providerProfile.availability', 'service.category', 'serviceTier'];
-        $ongoingStatuses = [
-            OrderStatus::Created,
-            OrderStatus::Offering,
-            OrderStatus::Accepted,
-            OrderStatus::OnTheWay,
-            OrderStatus::Arrived,
-            OrderStatus::InService,
-        ];
-
         $ongoing = Order::query()
             ->where('user_id', $request->user()->id)
-            ->whereIn('status', array_map(fn (OrderStatus $status) => $status->value, $ongoingStatuses))
+            ->whereIn('status', Order::customerActiveStatusValues())
             ->with($relations)
             ->latest()
             ->limit($limitPerSection)
@@ -340,22 +368,17 @@ class UserOrderController extends Controller
             ->with(['providerProfile.user', 'service.category', 'serviceTier'])
             ->firstOrFail();
 
-        if (in_array($order->status, [OrderStatus::Completed, OrderStatus::Cancelled, OrderStatus::Expired, OrderStatus::InService], true)) {
+        if (! $order->canBeCancelledByCustomer()) {
             return response()->json(['message' => 'Order cannot be cancelled in current status.'], 422);
         }
 
-        if (in_array($order->status, [OrderStatus::Accepted, OrderStatus::OnTheWay, OrderStatus::Arrived], true)
-            && blank($request->validated('reason'))) {
+        if ($order->status === OrderStatus::Accepted && blank($request->validated('reason'))) {
             return response()->json([
                 'message' => 'Please provide a cancellation reason for an accepted order.',
             ], 422);
         }
 
         $cancelFee = 0;
-        if ($order->status === OrderStatus::OnTheWay) {
-            $cancelFee = (int) config('luki.cancellation_fee_amount', 2000);
-        }
-
         if ($order->status === OrderStatus::Accepted && $order->accepted_at !== null && $order->accepted_at->diffInMinutes(now()) > 2) {
             $cancelFee = (int) config('luki.cancellation_fee_amount', 2000);
         }

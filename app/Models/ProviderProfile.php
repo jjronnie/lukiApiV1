@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\OrderStatus;
 use App\Enums\ProviderServiceApprovalStatus;
 use App\Enums\ProviderVerificationStatus;
+use App\Support\IdentityValueNormalizer;
 use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -63,6 +65,25 @@ class ProviderProfile extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (ProviderProfile $profile): void {
+            $profile->display_name = trim((string) $profile->display_name);
+            $profile->legal_name = filled($profile->legal_name)
+                ? IdentityValueNormalizer::humanName($profile->legal_name)
+                : null;
+            $profile->phone = filled($profile->phone)
+                ? IdentityValueNormalizer::ugandaPhoneLocal($profile->phone)
+                : null;
+            $profile->business_name = filled($profile->business_name)
+                ? trim((string) $profile->business_name)
+                : null;
+            $profile->business_address = filled($profile->business_address)
+                ? trim((string) $profile->business_address)
+                : null;
+            $profile->address_text = filled($profile->address_text)
+                ? trim((string) $profile->address_text)
+                : null;
+        });
+
         static::saved(function (ProviderProfile $profile): void {
             if ($profile->provider_number !== null) {
                 return;
@@ -114,6 +135,11 @@ class ProviderProfile extends Model
     public function offeredOrders(): HasMany
     {
         return $this->hasMany(OrderOffer::class);
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 
     public function scopeEligibleForMarketplace(Builder $query): Builder
@@ -248,6 +274,29 @@ class ProviderProfile extends Model
         $this->providerServices()
             ->whereNotIn('id', $keptProviderServiceIds === [] ? [-1] : $keptProviderServiceIds)
             ->update(['is_active' => false]);
+    }
+
+    public function earningsThisMonthAmount(): int
+    {
+        $completedOrders = $this->orders()
+            ->where('status', OrderStatus::Completed->value)
+            ->whereBetween('completed_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ->get(['total_amount', 'transport_fee_amount']);
+
+        $baseAmount = (int) config('luki.commission.base_amount', 1000);
+        $percentageRate = (float) config('luki.commission.percentage_rate', 5);
+        $excludeTransport = (bool) config('luki.commission.exclude_transport', true);
+
+        return (int) $completedOrders->sum(function (Order $order) use ($baseAmount, $percentageRate, $excludeTransport): int {
+            $totalAmount = (int) ($order->total_amount ?? 0);
+            $transportAmount = (int) ($order->transport_fee_amount ?? 0);
+            $commissionableAmount = $excludeTransport
+                ? max(0, $totalAmount - $transportAmount)
+                : $totalAmount;
+            $commissionAmount = $baseAmount + (int) round($commissionableAmount * ($percentageRate / 100));
+
+            return max(0, $totalAmount - $commissionAmount);
+        });
     }
 
     private static function generateProviderNumber(int $providerProfileId): int

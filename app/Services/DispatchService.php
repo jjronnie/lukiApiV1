@@ -34,6 +34,9 @@ class DispatchService
         return ProviderProfile::query()
             ->whereNotNull('onboarding_completed_at')
             ->whereHas('user', fn ($query) => $query->where('is_blocked', false))
+            ->whereDoesntHave('orders', function ($query) {
+                $query->whereIn('status', Order::providerBusyStatusValues());
+            })
             ->whereHas('providerServices', function ($query) use ($order) {
                 $query->where('service_id', $order->service_id)
                     ->where('is_active', true)
@@ -394,21 +397,6 @@ class DispatchService
         if (! $didExpire) {
             return;
         }
-
-        $order->loadMissing('user');
-        if ($order->user !== null) {
-            $this->notificationDispatcher->sendToUser(
-                $order->user,
-                MobileAppType::Customer,
-                'no_provider_found',
-                'No provider found',
-                'We could not find an available provider right now.',
-                [
-                    'screen' => 'booking_confirmation',
-                    'order_id' => $order->public_id,
-                ],
-            );
-        }
     }
 
     private function qualifiesForOrder(ProviderProfile $provider, Order $order): bool
@@ -455,6 +443,10 @@ class DispatchService
             || ! $provider->availability->is_online
             || $provider->availability->last_seen_at === null
             || $provider->availability->last_seen_at->lt(now()->subSeconds((int) config('luki.dispatch.location_freshness_seconds', 180)))) {
+            return false;
+        }
+
+        if ($provider->orders()->whereIn('status', Order::providerBusyStatusValues())->exists()) {
             return false;
         }
 

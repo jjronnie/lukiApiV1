@@ -15,8 +15,8 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserIdentityVerificationController;
 use App\Http\Controllers\Admin\WalletController;
 use App\Http\Controllers\Api\V1\Auth\EmailVerificationController;
-use App\Http\Controllers\Web\EmailPreferenceController;
 use App\Http\Controllers\Web\Auth\LoginController;
+use App\Http\Controllers\Web\EmailPreferenceController;
 use App\Http\Controllers\Web\VerificationSessionController;
 use Illuminate\Support\Facades\Route;
 
@@ -61,6 +61,8 @@ Route::prefix('admin')
         Route::get('/providers', [ProviderController::class, 'index'])->name('providers.index');
         Route::get('/providers/{provider}', [ProviderController::class, 'show'])->name('providers.show');
         Route::post('/providers/{provider}/verification', [ProviderController::class, 'updateVerification'])->name('providers.verification.update');
+        Route::get('/providers/{provider}/verification-media/{collection}', [ProviderController::class, 'verificationMedia'])->name('providers.verification.media');
+        Route::delete('/providers/{provider}/verification-media/{collection}', [ProviderController::class, 'destroyVerificationMedia'])->name('providers.verification.media.destroy');
         Route::post('/providers/{provider}/services', [ProviderController::class, 'updateServices'])->name('providers.services.update');
         Route::get('/provider-documents/{document}/media', [ProviderController::class, 'documentMedia'])->name('provider-documents.media');
         Route::resource('users', UserController::class)->only(['index', 'edit', 'update', 'destroy']);
@@ -68,6 +70,7 @@ Route::prefix('admin')
         Route::get('/user-identity-verifications/{verification}', [UserIdentityVerificationController::class, 'show'])->name('user-identity-verifications.show');
         Route::post('/user-identity-verifications/{verification}/review', [UserIdentityVerificationController::class, 'review'])->name('user-identity-verifications.review');
         Route::get('/user-identity-verifications/{verification}/media/{collection}', [UserIdentityVerificationController::class, 'media'])->name('user-identity-verifications.media');
+        Route::delete('/user-identity-verifications/{verification}/media/{collection}', [UserIdentityVerificationController::class, 'destroyMedia'])->name('user-identity-verifications.media.destroy');
 
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');

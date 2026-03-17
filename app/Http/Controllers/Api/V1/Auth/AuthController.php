@@ -321,6 +321,7 @@ class AuthController extends Controller
             'emailPreference',
             'providerProfile',
             'providerProfile.availability',
+            'providerProfile.wallet',
             'providerProfile.providerServices.service.category',
             'providerProfile.providerServices.eligibleTiers',
         ];

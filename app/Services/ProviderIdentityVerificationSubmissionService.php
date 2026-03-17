@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 class ProviderIdentityVerificationSubmissionService
 {
     /**
-     * @param  array{id_type:string,selfie:UploadedFile,id_front:UploadedFile,id_back:UploadedFile,business_license?:UploadedFile|null}  $data
+     * @param  array{id_type:string,selfie:UploadedFile,id_front:UploadedFile,id_back:UploadedFile,business_license?:UploadedFile|null,is_adult?:mixed}  $data
      */
     public function submit(User $user, array $data): ProviderIdentityVerification
     {
@@ -26,6 +26,19 @@ class ProviderIdentityVerificationSubmissionService
                     'provider_profile_id' => $profile?->id,
                     'id_type' => $data['id_type'],
                     'status' => ProviderVerificationStatus::Pending,
+                    'is_age_confirmed' => (bool) ($data['is_adult'] ?? false),
+                    'id_number' => null,
+                    'date_of_birth' => null,
+                    'district_id' => null,
+                    'district_name' => null,
+                    'county_id' => null,
+                    'county_name' => null,
+                    'sub_county_id' => null,
+                    'sub_county_name' => null,
+                    'parish_id' => null,
+                    'parish_name' => null,
+                    'village_id' => null,
+                    'village_name' => null,
                     'submitted_at' => now(),
                     'reviewed_by' => null,
                     'reviewed_at' => null,

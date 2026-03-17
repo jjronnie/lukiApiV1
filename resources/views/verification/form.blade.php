@@ -7,10 +7,10 @@
 
 @section('content')
     <section class="hero">
-        <p class="eyebrow">Secure Verification</p>
-        <h1>Confirm your identity in one secure step.</h1>
+        <p class="eyebrow">Verification</p>
+        <h1>Upload your verification details.</h1>
         <p class="subtitle">
-            Upload a clear selfie and both sides of your identification document. This secure session expires on
+            Add a clear selfie and your ID images before this secure session expires on
             {{ $expiresAt?->timezone(config('app.timezone'))->format('D, d M Y \a\t H:i') }}.
         </p>
         <div class="meta-bar">
@@ -25,7 +25,7 @@
 
     <section class="card stack">
         <div class="notice warning">
-            Use clear, well-lit photos. Files must be image files only and 10MB or less each.
+            Use clear, well-lit images. Each file must be 10MB or less.
         </div>
 
         @if ($errors->any())
@@ -43,7 +43,7 @@
 
             <div class="section">
                 <h2>Step 1. Selfie</h2>
-                <p>Use the front camera only. Make sure your face is fully visible and centered.</p>
+                <p>Make sure your face is visible and centered.</p>
                 <div class="field-card">
                     <div class="field">
                         <div class="field-meta">
@@ -72,7 +72,7 @@
 
             <div class="section">
                 <h2>Step 2. Document details</h2>
-                <p>Select the document type you are uploading.</p>
+                <p>Select the ID you are submitting.</p>
                 <div class="field">
                     <label for="id_type">ID type</label>
                     <select id="id_type" name="id_type" required>
@@ -86,7 +86,7 @@
 
             <div class="section">
                 <h2>Step 3. Document images</h2>
-                <p>Upload the front and back of the same document. You can take a new photo or choose one from your files.</p>
+                <p>Upload the front and back of the same document.</p>
                 <div class="field-card">
                     <div class="field">
                         <label for="id_front">ID front image</label>
@@ -134,7 +134,7 @@
             @if ($isProviderFlow)
                 <div class="section">
                     <h2>Step 4. Business licence</h2>
-                    <p>This document is optional. Add it only if you operate as a registered company or business.</p>
+                    <p>This is optional.</p>
                     <div class="field-card">
                         <div class="field">
                             <label for="business_license">Business licence image</label>
@@ -158,13 +158,29 @@
                 </div>
             @endif
 
+            <div class="field-card">
+                <label style="display:flex; gap:12px; align-items:flex-start; margin-bottom:0;">
+                    <input
+                        id="is_adult"
+                        name="is_adult"
+                        type="checkbox"
+                        value="1"
+                        @checked(old('is_adult'))
+                        style="width:auto; margin-top:3px;"
+                    >
+                    <span style="font-size:14px; font-weight:600; line-height:1.6;">
+                        I confirm that I am 18 years or older.
+                    </span>
+                </label>
+            </div>
+
             <div class="button-row">
                 <button id="submit-button" class="btn" type="submit" disabled>Submit Verification</button>
             </div>
         </form>
 
         <p class="footer-note">
-            After submission, return to the app to refresh your status. Your images are processed server-side and attached to your account for review.
+            Return to the app after submitting to refresh your status.
         </p>
     </section>
 
@@ -172,6 +188,7 @@
         const form = document.getElementById('verification-form');
         const submitButton = document.getElementById('submit-button');
         const idType = document.getElementById('id_type');
+        const isAdultCheckbox = document.getElementById('is_adult');
         const maxFileSize = 10 * 1024 * 1024;
         const fieldConfig = {
             selfie: {
@@ -250,6 +267,7 @@
 
         const updateSubmitState = () => {
             const hasValidIdType = (idType.value || '').trim().length > 0;
+            const isAdultConfirmed = isAdultCheckbox.checked;
             const allFieldsReady = Object.values(fieldConfig).every(({ input }) => {
                 const file = input.files && input.files[0];
                 if (input.id === 'business_license' && !file) {
@@ -259,7 +277,7 @@
                 return validateFile(file) === null;
             });
 
-            submitButton.disabled = !(hasValidIdType && allFieldsReady);
+            submitButton.disabled = !(hasValidIdType && isAdultConfirmed && allFieldsReady);
         };
 
         Object.values(fieldConfig).forEach((config) => {
@@ -327,6 +345,7 @@
         });
 
         idType.addEventListener('change', updateSubmitState);
+        isAdultCheckbox.addEventListener('change', updateSubmitState);
         updateSubmitState();
 
         form.addEventListener('submit', () => {

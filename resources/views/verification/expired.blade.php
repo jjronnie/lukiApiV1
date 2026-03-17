@@ -5,13 +5,12 @@
 @endphp
 
 @section('content')
-    <section class="hero">
-        <p class="eyebrow">Identity Verification</p>
-        <h1>{{ $title ?? 'Session expired' }}</h1>
-        <p class="subtitle">{{ $message ?? 'This verification session has expired.' }}</p>
-    </section>
-
     <section class="card stack">
+        <div style="display:grid; gap:12px; text-align:center;">
+            <p class="eyebrow" style="margin-bottom:0;">Verification</p>
+            <h1>{{ $title ?? 'Session expired' }}</h1>
+            <p class="subtitle" style="margin-top:0;">{{ $message ?? 'This verification session has expired.' }}</p>
+        </div>
         <div class="notice warning">
             {{ $message ?? 'This verification session has expired.' }}
         </div>

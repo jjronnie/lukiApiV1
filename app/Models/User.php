@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\IdentityValueNormalizer;
 use App\Traits\HasPublicId;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -77,11 +78,30 @@ class User extends Authenticatable implements MustVerifyEmail
     protected static function booted(): void
     {
         static::saving(function (self $user): void {
+            $user->first_name = IdentityValueNormalizer::humanName($user->first_name);
+            $user->last_name = IdentityValueNormalizer::humanName($user->last_name);
+            $user->email = IdentityValueNormalizer::email($user->email);
+
+            $normalizedPhone = IdentityValueNormalizer::ugandaPhoneE164($user->phone);
+            if ($normalizedPhone !== '') {
+                $user->phone = $normalizedPhone;
+                $phoneDigits = preg_replace('/\D+/', '', $normalizedPhone) ?? '';
+                $user->phone_country_code = '+256';
+                $user->phone_local_number = strlen($phoneDigits) === 12
+                    ? substr($phoneDigits, 3)
+                    : $user->phone_local_number;
+            } elseif (blank($user->phone)) {
+                $user->phone = null;
+                $user->phone_country_code = null;
+                $user->phone_local_number = null;
+            }
+
             $firstName = trim((string) ($user->first_name ?? ''));
             $lastName = trim((string) ($user->last_name ?? ''));
 
             if ($firstName !== '' || $lastName !== '') {
                 $user->name = self::combineName($firstName, $lastName);
+
                 return;
             }
 
@@ -143,7 +163,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public static function splitName(?string $fullName): array
     {
-        $normalized = trim((string) $fullName);
+        $normalized = IdentityValueNormalizer::humanName($fullName);
         if ($normalized === '') {
             return ['', null];
         }
@@ -157,7 +177,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public static function combineName(?string $firstName, ?string $lastName): string
     {
-        return trim(implode(' ', array_filter([
+        return IdentityValueNormalizer::humanName(implode(' ', array_filter([
             trim((string) $firstName),
             trim((string) $lastName),
         ])));

@@ -31,27 +31,38 @@ class ProviderProfileController extends Controller
 
         $profile = DB::transaction(function () use ($user, $data) {
             $profile = ProviderProfile::query()->firstOrNew(['user_id' => $user->id]);
+            $requestedProviderType = $data['provider_type'];
             $displayName = trim((string) ($data['display_name']
-                ?? ($data['provider_type'] === 'business'
+                ?? ($requestedProviderType === 'business'
                     ? ($data['business_name'] ?? null)
                     : $user->name)));
 
             if (($profile->verification_status?->value ?? $profile->verification_status) === ProviderVerificationStatus::Approved->value
+                && filled($profile->avatar_path)
                 && ($data['avatar'] ?? null) !== null) {
                 throw ValidationException::withMessages([
                     'avatar' => ['Profile photo changes are locked after verification approval.'],
                 ]);
             }
 
+            if ($profile->exists
+                && $profile->onboarding_completed_at !== null
+                && filled($profile->provider_type)
+                && $profile->provider_type !== $requestedProviderType) {
+                throw ValidationException::withMessages([
+                    'provider_type' => ['Operating type cannot be changed after onboarding is completed.'],
+                ]);
+            }
+
             $profile->fill([
-                'provider_type' => $data['provider_type'],
+                'provider_type' => $requestedProviderType,
                 'display_name' => $displayName !== '' ? $displayName : $user->email,
                 'legal_name' => $data['legal_name'] ?? null,
                 'bio' => $data['bio'] ?? null,
                 'phone' => $data['phone'],
                 'address_text' => $data['address_text'],
-                'business_name' => $data['provider_type'] === 'business' ? ($data['business_name'] ?? null) : null,
-                'business_address' => $data['provider_type'] === 'business' ? ($data['business_address'] ?? null) : null,
+                'business_name' => $requestedProviderType === 'business' ? ($data['business_name'] ?? null) : null,
+                'business_address' => $requestedProviderType === 'business' ? ($data['business_address'] ?? null) : null,
                 'verification_status' => $profile->exists
                     ? ($profile->verification_status ?? ProviderVerificationStatus::Pending)
                     : ProviderVerificationStatus::Pending,
@@ -70,6 +81,13 @@ class ProviderProfileController extends Controller
             }
 
             $profile->save();
+
+            $phoneDigits = preg_replace('/\D+/', '', (string) ($data['phone_e164'] ?? '')) ?? '';
+            $user->forceFill([
+                'phone' => $data['phone_e164'],
+                'phone_country_code' => '+256',
+                'phone_local_number' => strlen($phoneDigits) === 12 ? substr($phoneDigits, 3) : null,
+            ])->save();
 
             Wallet::query()->firstOrCreate(
                 ['provider_profile_id' => $profile->id],
@@ -96,6 +114,7 @@ class ProviderProfileController extends Controller
             'user' => new UserResource($user->fresh([
                 'roles',
                 'providerProfile.availability',
+                'providerProfile.wallet',
                 'providerProfile.providerServices.service.category',
                 'providerProfile.providerServices.eligibleTiers',
                 'providerIdentityVerification',

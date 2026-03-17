@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Enums\ProviderVerificationStatus;
 use App\Enums\RoleName;
+use App\Support\IdentityValueNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -11,7 +12,14 @@ class UpdateUserRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
+        $normalizedPhone = filled($this->input('phone'))
+            ? IdentityValueNormalizer::ugandaPhoneE164($this->input('phone'))
+            : null;
+
         $this->merge([
+            'name' => IdentityValueNormalizer::humanName($this->input('name')),
+            'email' => IdentityValueNormalizer::email($this->input('email')),
+            'phone' => $normalizedPhone,
             'is_blocked' => $this->boolean('is_blocked'),
         ]);
     }
@@ -31,7 +39,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
-            'phone' => ['nullable', 'string', 'max:32', Rule::unique('users', 'phone')->ignore($userId)],
+            'phone' => ['nullable', 'string', 'regex:/^\+2567\d{8}$/', Rule::unique('users', 'phone')->ignore($userId)],
             'referral_code' => ['nullable', 'string', 'max:24', Rule::unique('users', 'referral_code')->ignore($userId)],
             'is_blocked' => ['nullable', 'boolean'],
             'role' => ['required', 'string', Rule::in(collect(RoleName::cases())->map(fn (RoleName $role) => $role->value)->all())],
@@ -42,6 +50,15 @@ class UpdateUserRequest extends FormRequest
                 'string',
                 Rule::in(collect(ProviderVerificationStatus::cases())->map(fn (ProviderVerificationStatus $status) => $status->value)->all()),
             ],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.unique' => 'This email is taken already.',
+            'phone.regex' => 'Enter a valid Uganda phone number.',
+            'phone.unique' => 'This phone number is taken already.',
         ];
     }
 }

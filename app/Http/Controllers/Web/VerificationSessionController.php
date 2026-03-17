@@ -28,13 +28,13 @@ class VerificationSessionController extends Controller
             if ($this->hasExpiredLink($request, $session)) {
                 return response()->view('verification.expired', [
                     'title' => 'Session expired',
-                    'message' => 'This verification session expired after 15 minutes. Return to the app to start a new one.',
+                    'message' => 'This verification session has expired. Return to the app to start a new one.',
                 ], 410);
             }
 
             return response()->view('verification.invalid', [
                 'title' => 'Verification link invalid',
-                'message' => 'This verification link is invalid or has been changed. Please return to the app and start a new verification session.',
+                'message' => 'This verification link is invalid. Return to the app and open a new one.',
             ], 403);
         }
 
@@ -68,13 +68,13 @@ class VerificationSessionController extends Controller
             if ($this->hasExpiredLink($request, $session)) {
                 return response()->view('verification.expired', [
                     'title' => 'Session expired',
-                    'message' => 'This verification session expired after 15 minutes. Return to the app to start a new one.',
+                    'message' => 'This verification session has expired. Return to the app to start a new one.',
                 ], 410);
             }
 
             return response()->view('verification.invalid', [
                 'title' => 'Verification link invalid',
-                'message' => 'This verification link is invalid or has been changed. Please return to the app and start a new verification session.',
+                'message' => 'This verification link is invalid. Return to the app and open a new one.',
             ], 403);
         }
 
@@ -101,11 +101,11 @@ class VerificationSessionController extends Controller
 
         return response()->view('verification.result', [
             'title' => $session->flow === VerificationSessionFlow::ProviderIdentity
-                ? 'Provider verification submitted'
-                : 'Verification submitted',
+                ? 'Your details were submitted'
+                : 'Your details were submitted',
             'message' => $session->flow === VerificationSessionFlow::ProviderIdentity
-                ? 'Your provider verification was submitted successfully. Our team will review it and update your status in the app.'
-                : 'Your verification was submitted successfully. Our team will review it and update your status in the app.',
+                ? 'Please await approval.'
+                : 'Please await approval.',
             'tone' => 'success',
         ]);
     }
@@ -136,14 +136,14 @@ class VerificationSessionController extends Controller
         if ($session->status === VerificationSessionStatus::Expired) {
             return response()->view('verification.expired', [
                 'title' => 'Session expired',
-                'message' => 'This verification session expired after 15 minutes. Return to the app to start a new one.',
+                'message' => 'This verification session has expired. Return to the app to start a new one.',
             ], 410);
         }
 
         if ($session->status === VerificationSessionStatus::Cancelled) {
             return response()->view('verification.invalid', [
                 'title' => 'Session unavailable',
-                'message' => 'This verification session is no longer available. Return to the app and open a fresh session.',
+                'message' => 'This verification session is no longer available. Return to the app and open a fresh one.',
             ], 410);
         }
 
@@ -163,7 +163,7 @@ class VerificationSessionController extends Controller
 
             return response()->view('verification.result', [
                 'title' => $session->flow === VerificationSessionFlow::ProviderIdentity
-                    ? 'Provider already verified'
+                    ? 'Already verified'
                     : 'Account already verified',
                 'message' => $session->flow === VerificationSessionFlow::ProviderIdentity
                     ? 'Your provider identity has already been approved. You can return to the app.'
@@ -178,11 +178,11 @@ class VerificationSessionController extends Controller
         ) {
             return response()->view('verification.result', [
                 'title' => $session->flow === VerificationSessionFlow::ProviderIdentity
-                    ? 'Provider verification submitted'
-                    : 'Verification submitted',
+                    ? 'Your details were submitted'
+                    : 'Your details were submitted',
                 'message' => $session->flow === VerificationSessionFlow::ProviderIdentity
-                    ? 'Your provider verification was submitted successfully. Our team will review it and update your status in the app.'
-                    : 'Your verification was submitted successfully. Our team will review it and update your status in the app.',
+                    ? 'Please await approval.'
+                    : 'Please await approval.',
                 'tone' => 'success',
             ]);
         }

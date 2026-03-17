@@ -50,8 +50,22 @@ class UserResource extends JsonResource
                     'reviews_count' => $this->providerProfile->rating_count,
                     'completed_orders_count' => $this->providerProfile->completed_orders_count,
                     'cancelled_orders_count' => $this->providerProfile->cancelled_orders_count,
+                    'earnings_this_month_amount' => $this->providerProfile->earningsThisMonthAmount(),
                     'is_online' => (bool) ($this->providerProfile->availability?->is_online ?? false),
                     'last_seen_at' => $this->providerProfile->availability?->last_seen_at,
+                    'wallet' => $this->when(
+                        $this->providerProfile->relationLoaded('wallet') && $this->providerProfile->wallet !== null,
+                        fn () => [
+                            'currency' => $this->providerProfile->wallet->currency,
+                            'balance_amount' => $this->providerProfile->wallet->balance_amount,
+                            'hold_amount' => $this->providerProfile->wallet->hold_amount,
+                            'available_amount' => max(
+                                0,
+                                $this->providerProfile->wallet->balance_amount - $this->providerProfile->wallet->hold_amount
+                            ),
+                            'status' => $this->providerProfile->wallet->status,
+                        ]
+                    ),
                     'offered_services' => $this->when(
                         $this->providerProfile->relationLoaded('providerServices'),
                         fn () => $this->providerProfile->providerServices->map(function ($providerService) {

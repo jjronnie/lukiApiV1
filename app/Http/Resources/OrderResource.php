@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Enums\OrderStatus;
 
 class OrderResource extends JsonResource
 {
@@ -86,6 +86,7 @@ class OrderResource extends JsonResource
                 'provider_review' => $this->provider_review,
                 'rated_at' => $this->rated_at,
             ],
+            'is_rated' => $this->provider_rating !== null || $this->rated_at !== null,
             'search_state' => [
                 'state' => $this->is_scheduled
                     ? 'scheduled'
@@ -104,6 +105,10 @@ class OrderResource extends JsonResource
                     OrderStatus::Offering->value,
                 ], true),
                 'can_retry' => ! $this->is_scheduled && ($this->status?->value ?? $this->status) === OrderStatus::Expired->value,
+            ],
+            'actions' => [
+                'customer_can_cancel' => $this->canBeCancelledByCustomer(),
+                'provider_available_status_updates' => $this->availableProviderStatusUpdates(),
             ],
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item) => [
                 'item_type' => $item->item_type,

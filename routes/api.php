@@ -4,9 +4,9 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\EmailVerificationController;
 use App\Http\Controllers\Api\V1\Auth\GoogleAuthController;
 use App\Http\Controllers\Api\V1\Auth\PasswordController;
+use App\Http\Controllers\Api\V1\Catalog\HomeAdvertController;
 use App\Http\Controllers\Api\V1\Catalog\ServiceCatalogController;
 use App\Http\Controllers\Api\V1\Catalog\ServiceCategoryController;
-use App\Http\Controllers\Api\V1\Catalog\HomeAdvertController;
 use App\Http\Controllers\Api\V1\Dispute\DisputeController;
 use App\Http\Controllers\Api\V1\Notification\DeviceTokenController;
 use App\Http\Controllers\Api\V1\Notification\NotificationController;
@@ -63,6 +63,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::post('/notifications/test', [NotificationController::class, 'test']);
         Route::post('/notifications/{notificationRecord}/read', [NotificationController::class, 'markRead']);
+        Route::delete('/notifications/{notificationRecord}', [NotificationController::class, 'destroy']);
 
         Route::prefix('provider')->group(function () {
             Route::post('/profile', [ProviderProfileController::class, 'upsert'])->middleware('role:provider');

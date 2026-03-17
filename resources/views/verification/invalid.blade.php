@@ -5,13 +5,12 @@
 @endphp
 
 @section('content')
-    <section class="hero">
-        <p class="eyebrow">Identity Verification</p>
-        <h1>{{ $title ?? 'Invalid verification link' }}</h1>
-        <p class="subtitle">{{ $message ?? 'This verification link is not valid.' }}</p>
-    </section>
-
     <section class="card stack">
+        <div style="display:grid; gap:12px; text-align:center;">
+            <p class="eyebrow" style="margin-bottom:0;">Verification</p>
+            <h1>{{ $title ?? 'Invalid verification link' }}</h1>
+            <p class="subtitle" style="margin-top:0;">{{ $message ?? 'This verification link is not valid.' }}</p>
+        </div>
         <div class="notice danger">
             {{ $message ?? 'This verification link is not valid.' }}
         </div>

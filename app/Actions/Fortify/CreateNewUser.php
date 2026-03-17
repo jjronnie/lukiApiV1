@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Support\IdentityValueNormalizer;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -19,7 +20,14 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
-        Validator::make($input, [
+        $normalizedName = IdentityValueNormalizer::humanName($input['name'] ?? '');
+        $normalizedEmail = IdentityValueNormalizer::email($input['email'] ?? '');
+
+        Validator::make([
+            'name' => $normalizedName,
+            'email' => $normalizedEmail,
+            'password' => $input['password'] ?? null,
+        ], [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -32,8 +40,8 @@ class CreateNewUser implements CreatesNewUsers
         ])->validate();
 
         return User::create([
-            'name' => $input['name'],
-            'email' => $input['email'],
+            'name' => $normalizedName,
+            'email' => $normalizedEmail,
             'password' => Hash::make($input['password']),
         ]);
     }

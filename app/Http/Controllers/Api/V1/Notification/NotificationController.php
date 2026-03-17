@@ -50,6 +50,17 @@ class NotificationController extends Controller
         ]);
     }
 
+    public function destroy(Request $request, NotificationRecord $notificationRecord): JsonResponse
+    {
+        abort_unless($notificationRecord->user_id === $request->user()->id, 404);
+
+        $notificationRecord->delete();
+
+        return response()->json([
+            'message' => 'Notification cleared.',
+        ]);
+    }
+
     public function test(TestNotificationRequest $request): JsonResponse
     {
         $appType = MobileAppType::from($request->validated('app_type'));

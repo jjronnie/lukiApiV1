@@ -22,6 +22,7 @@ class SubmitUserIdentityVerificationRequest extends FormRequest
             'selfie' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'id_front' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'id_back' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            'is_adult' => ['accepted'],
         ];
     }
 }

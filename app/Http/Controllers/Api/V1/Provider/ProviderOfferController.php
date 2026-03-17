@@ -27,6 +27,15 @@ class ProviderOfferController extends Controller
     {
         $profile = auth()->user()->providerProfile()->firstOrFail();
 
+        $hasOngoingOrder = Order::query()
+            ->where('provider_profile_id', $profile->id)
+            ->whereIn('status', Order::providerBusyStatusValues())
+            ->exists();
+
+        if ($hasOngoingOrder) {
+            return ProviderOfferResource::collection(collect());
+        }
+
         $offers = OrderOffer::query()
             ->with(['order.user', 'order.service.category', 'order.serviceTier'])
             ->where('provider_profile_id', $profile->id)
@@ -85,6 +94,16 @@ class ProviderOfferController extends Controller
                     ->where('public_id', $orderPublicId)
                     ->lockForUpdate()
                     ->firstOrFail();
+
+                $hasOngoingOrder = Order::query()
+                    ->where('provider_profile_id', $providerProfile->id)
+                    ->where('id', '!=', $order->id)
+                    ->whereIn('status', Order::providerBusyStatusValues())
+                    ->exists();
+
+                if ($hasOngoingOrder) {
+                    abort(422, 'Finish your ongoing order before accepting a new one.');
+                }
 
                 if (in_array($order->status, [OrderStatus::Accepted, OrderStatus::OnTheWay, OrderStatus::Arrived, OrderStatus::InService, OrderStatus::Completed], true)) {
                     OrderOffer::query()

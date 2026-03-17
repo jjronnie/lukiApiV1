@@ -47,16 +47,16 @@ class ProviderOrderController extends Controller
 
         if ($scope === 'completed') {
             $query->where('status', OrderStatus::Completed);
+            if ($request->boolean('today_only')) {
+                $query->whereDate('completed_at', today());
+            }
         } elseif ($scope === 'active') {
-            $query->whereIn('status', [
-                OrderStatus::Accepted,
-                OrderStatus::OnTheWay,
-                OrderStatus::Arrived,
-                OrderStatus::InService,
-            ]);
+            $query->whereIn('status', Order::providerBusyStatusValues());
         }
 
-        return OrderResource::collection($query->latest()->paginate(20));
+        $query->latest($scope === 'completed' ? 'completed_at' : 'created_at');
+
+        return OrderResource::collection($query->paginate(20));
     }
 
     public function active(Request $request): JsonResponse
@@ -65,12 +65,7 @@ class ProviderOrderController extends Controller
 
         $order = Order::query()
             ->where('provider_profile_id', $providerProfile->id)
-            ->whereIn('status', [
-                OrderStatus::Accepted,
-                OrderStatus::OnTheWay,
-                OrderStatus::Arrived,
-                OrderStatus::InService,
-            ])
+            ->whereIn('status', Order::providerBusyStatusValues())
             ->with(['items.addOn', 'providerProfile.user', 'providerProfile.availability', 'service.category', 'serviceTier', 'user', 'statusHistories'])
             ->latest('accepted_at')
             ->first();
@@ -248,76 +243,9 @@ class ProviderOrderController extends Controller
         CancelProviderOrderRequest $request,
         string $orderPublicId,
     ): JsonResponse {
-        $providerProfile = $request->user()->providerProfile()->firstOrFail();
-
-        $order = DB::transaction(function () use ($providerProfile, $request, $orderPublicId) {
-            $order = Order::query()
-                ->where('public_id', $orderPublicId)
-                ->where('provider_profile_id', $providerProfile->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if (! in_array($order->status, [
-                OrderStatus::Accepted,
-                OrderStatus::OnTheWay,
-                OrderStatus::Arrived,
-            ], true)) {
-                abort(422, 'This order cannot be cancelled anymore.');
-            }
-
-            $fromStatus = $order->status;
-            $order->update([
-                'status' => OrderStatus::Cancelled,
-                'cancelled_at' => now(),
-                'cancelled_by_user_id' => $request->user()->id,
-                'cancellation_reason' => $request->validated('reason'),
-            ]);
-
-            $order->statusHistories()->create([
-                'from_status' => $fromStatus->value,
-                'to_status' => OrderStatus::Cancelled->value,
-                'changed_by_user_id' => $request->user()->id,
-                'meta' => [
-                    'reason' => $request->validated('reason'),
-                    'source' => 'provider_order_cancel',
-                ],
-                'created_at' => now(),
-            ]);
-
-            $providerProfile->increment('cancelled_orders_count');
-
-            return $order;
-        });
-
-        $this->providerRatingService->refresh($providerProfile->fresh() ?? $providerProfile);
-
-        $order->loadMissing('user');
-        if ($order->user !== null) {
-            $this->notificationDispatcher->sendToUser(
-                $order->user,
-                MobileAppType::Customer,
-                'provider_cancelled_order',
-                'Provider cancelled the order',
-                'Your provider cancelled this booking. Please review the latest status in the app.',
-                [
-                    'screen' => 'order_detail',
-                    'order_id' => $order->public_id,
-                ],
-            );
-        }
-
         return response()->json([
-            'message' => 'Order cancelled.',
-            'order' => new OrderResource($order->load([
-                'items.addOn',
-                'providerProfile.user',
-                'providerProfile.availability',
-                'service.category',
-                'serviceTier',
-                'user',
-                'statusHistories',
-            ])),
-        ]);
+            'message' => 'Providers cannot cancel bookings from the app.',
+        ], 403);
     }
 
     public function updateLocation(
@@ -331,9 +259,9 @@ class ProviderOrderController extends Controller
             ->where('public_id', $orderPublicId)
             ->where('provider_profile_id', $providerProfile->id)
             ->whereIn('status', [
-                OrderStatus::Accepted,
-                OrderStatus::OnTheWay,
-                OrderStatus::Arrived,
+                OrderStatus::Accepted->value,
+                OrderStatus::OnTheWay->value,
+                OrderStatus::Arrived->value,
             ])
             ->firstOrFail();
 
@@ -382,14 +310,7 @@ class ProviderOrderController extends Controller
 
     private function isValidTransition(OrderStatus $current, OrderStatus $next): bool
     {
-        $allowed = [
-            OrderStatus::Accepted->value => [OrderStatus::OnTheWay],
-            OrderStatus::OnTheWay->value => [OrderStatus::Arrived, OrderStatus::InService],
-            OrderStatus::Arrived->value => [OrderStatus::InService],
-            OrderStatus::InService->value => [OrderStatus::Completed],
-        ];
-
-        return in_array($next, $allowed[$current->value] ?? [], true);
+        return in_array($next->value, Order::providerAvailableStatusUpdatesFor($current), true);
     }
 
     private function distanceKm(float $lat1, float $lng1, float $lat2, float $lng2): float

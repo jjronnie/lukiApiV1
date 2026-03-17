@@ -156,4 +156,79 @@ class Order extends Model
     {
         return $this->hasMany(Dispute::class);
     }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function customerActiveStatusValues(): array
+    {
+        return [
+            OrderStatus::Created->value,
+            OrderStatus::Offering->value,
+            OrderStatus::Accepted->value,
+            OrderStatus::OnTheWay->value,
+            OrderStatus::Arrived->value,
+            OrderStatus::InService->value,
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function providerBusyStatusValues(): array
+    {
+        return [
+            OrderStatus::Accepted->value,
+            OrderStatus::OnTheWay->value,
+            OrderStatus::Arrived->value,
+            OrderStatus::InService->value,
+        ];
+    }
+
+    public function canBeCancelledByCustomer(): bool
+    {
+        return self::canStatusBeCancelledByCustomer($this->status);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function availableProviderStatusUpdates(): array
+    {
+        return self::providerAvailableStatusUpdatesFor($this->status);
+    }
+
+    public static function canStatusBeCancelledByCustomer(OrderStatus|string|null $status): bool
+    {
+        return in_array(self::normalizeStatusValue($status), [
+            OrderStatus::Created->value,
+            OrderStatus::Offering->value,
+            OrderStatus::Accepted->value,
+            OrderStatus::OnTheWay->value,
+            OrderStatus::Arrived->value,
+        ], true);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function providerAvailableStatusUpdatesFor(OrderStatus|string|null $status): array
+    {
+        return match (self::normalizeStatusValue($status)) {
+            OrderStatus::Accepted->value => [OrderStatus::OnTheWay->value],
+            OrderStatus::OnTheWay->value => [OrderStatus::Arrived->value],
+            OrderStatus::Arrived->value => [OrderStatus::InService->value],
+            OrderStatus::InService->value => [OrderStatus::Completed->value],
+            default => [],
+        };
+    }
+
+    private static function normalizeStatusValue(OrderStatus|string|null $status): ?string
+    {
+        if ($status instanceof OrderStatus) {
+            return $status->value;
+        }
+
+        return $status;
+    }
 }

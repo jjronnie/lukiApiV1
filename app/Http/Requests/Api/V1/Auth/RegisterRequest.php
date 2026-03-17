@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1\Auth;
 
+use App\Support\IdentityValueNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -22,8 +23,12 @@ class RegisterRequest extends FormRequest
         }
 
         $this->merge([
-            'first_name' => $firstName,
-            'last_name' => $lastName,
+            'first_name' => IdentityValueNormalizer::humanName($firstName),
+            'last_name' => IdentityValueNormalizer::humanName($lastName),
+            'email' => IdentityValueNormalizer::email($this->input('email')),
+            'phone' => filled($this->input('phone'))
+                ? IdentityValueNormalizer::ugandaPhoneE164($this->input('phone'))
+                : null,
         ]);
     }
 
@@ -39,11 +44,20 @@ class RegisterRequest extends FormRequest
     {
         return [
             'app_type' => ['required', Rule::in(['customer', 'provider'])],
-            'first_name' => ['required', 'string', 'min:2', 'max:60'],
-            'last_name' => ['required', 'string', 'min:2', 'max:60'],
+            'first_name' => ['required', 'string', 'min:2', 'max:60', 'regex:/^[\pL][\pL\'\- ]*$/u'],
+            'last_name' => ['required', 'string', 'min:2', 'max:60', 'regex:/^[\pL][\pL\'\- ]*$/u'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:32', 'unique:users,phone'],
+            'phone' => ['nullable', 'string', 'regex:/^\+2567\d{8}$/', 'unique:users,phone'],
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.unique' => 'This email is taken already.',
+            'phone.regex' => 'Enter a valid Uganda phone number.',
+            'phone.unique' => 'This phone number is taken already.',
         ];
     }
 }
