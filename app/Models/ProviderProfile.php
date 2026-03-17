@@ -252,20 +252,17 @@ class ProviderProfile extends Model
 
     private static function generateProviderNumber(int $providerProfileId): int
     {
-        $preferred = 9999 + $providerProfileId;
-        if ($preferred >= 10000 && $preferred <= 99999
-            && ! static::query()->where('provider_number', $preferred)->exists()) {
-            return $preferred;
-        }
-
-        for ($attempt = 0; $attempt < 25; $attempt++) {
+        for ($attempt = 0; $attempt < 100; $attempt++) {
             $candidate = random_int(10000, 99999);
-            if (! static::query()->where('provider_number', $candidate)->exists()) {
+            if (! static::query()
+                ->where('provider_number', $candidate)
+                ->whereKeyNot($providerProfileId)
+                ->exists()) {
                 return $candidate;
             }
         }
 
-        throw new RuntimeException('Unable to assign a provider number.');
+        throw new RuntimeException('Unable to assign a unique 5-digit provider number.');
     }
 
     public function getAvatarUrlAttribute(): ?string
