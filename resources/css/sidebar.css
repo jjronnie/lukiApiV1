@@ -8,17 +8,15 @@
 
 /* Default: white text, no bg */
 .sidebar-link {
-  @apply flex items-center space-x-3 px-3 py-2 rounded-lg text-white font-medium transition-colors;
+  @apply flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-300 transition-all duration-150 hover:bg-white/10 hover:text-white;
 }
 
-/* Hover: make the text yellow, no bg */
 .sidebar-link:hover {
-  @apply text-yellow-400;
+  @apply bg-white/10 text-white;
 }
 
-/* Active: yellow text, no bg, slightly bolder */
 .sidebar-link-active {
-  @apply text-yellow-400 font-semibold;
+  @apply bg-white/15 text-white font-semibold shadow-sm;
 }
 
 .sidebar-dropdown {

@@ -22,10 +22,11 @@
         </button>
 
         <div data-sidebar-overlay
-            class="pointer-events-none fixed inset-0 z-40 bg-black/70 opacity-0 transition-opacity duration-300 md:hidden">
-        </div>
+            class="pointer-events-none fixed inset-0 z-40 bg-black/70 opacity-0 transition-opacity duration-300 md:hidden"
+            style="display: none; opacity:0;"
+        ></div>
 
-        <aside data-sidebar class="admin-sidebar -translate-x-full md:translate-x-0">
+        <aside id="admin-sidebar" data-sidebar class="admin-sidebar -translate-x-full md:translate-x-0" x-data="{ open: false }" >
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <div
@@ -34,7 +35,7 @@
                             <path
                                 d="M10 2a.75.75 0 0 1 .75.75v.79l3.25 1.625V4.75a.75.75 0 0 1 1.5 0v1.175l1.415.708a.75.75 0 0 1 0 1.342l-1.415.707v1.568a.75.75 0 0 1-1.5 0V9.432l-3.25 1.625v3.193l1.703.851a.75.75 0 1 1-.67 1.342L10 15.559l-1.703.884a.75.75 0 1 1-.67-1.342l1.703-.85v-3.194L6.08 9.432v1.568a.75.75 0 0 1-1.5 0V9.682l-1.415-.707a.75.75 0 0 1 0-1.342l1.415-.708V4.75a.75.75 0 0 1 1.5 0v.424l3.25-1.625v-.79A.75.75 0 0 1 10 2Z" />
                         </svg>
-                    </div>
+        </div>
                     <div>
                         <p class="font-display text-base">Luki Online</p>
                         <p class="text-xs text-zinc-400">Superadmin Console</p>
@@ -49,8 +50,43 @@
                             clip-rule="evenodd" />
                     </svg>
                 </button>
-            </div>
+</div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const openBtn = document.querySelector('[data-sidebar-open]');
+  const closeBtn = document.querySelector('[data-sidebar-close]');
+  const overlay = document.querySelector('[data-sidebar-overlay]');
+  const sidebar = document.getElementById('admin-sidebar');
+  const closeOverlay = () => {
+    if(sidebar){
+      sidebar.classList.add('-translate-x-full');
+      sidebar.classList.remove('translate-x-0');
+    }
+    if(overlay){
+      overlay.style.opacity = '0';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.display = 'none';
+    }
+  };
+  const openSidebar = () => {
+    if(sidebar){
+      sidebar.classList.remove('-translate-x-full');
+      sidebar.classList.add('translate-x-0');
+    }
+    if(overlay){
+      overlay.style.opacity = '0.7';
+      overlay.style.pointerEvents = 'auto';
+      overlay.style.display = 'block';
+    }
+  };
+  if(openBtn) openBtn.addEventListener('click', openSidebar);
+  if(closeBtn) closeBtn.addEventListener('click', closeOverlay);
+  if(overlay) overlay.addEventListener('click', closeOverlay);
+  // initialize as closed
+  closeOverlay();
+});
+</script>
             <div class="mt-8 space-y-1">
                 <p class="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Platform</p>
 
