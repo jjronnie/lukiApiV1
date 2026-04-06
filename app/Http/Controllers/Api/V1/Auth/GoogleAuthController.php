@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Enums\MobileAppType;
+use App\Enums\ProviderVerificationStatus;
 use App\Enums\RoleName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\GoogleAuthRequest;
@@ -10,17 +11,17 @@ use App\Http\Resources\UserResource;
 use App\Models\ProviderProfile;
 use App\Models\User;
 use App\Services\AuthTokenService;
+use App\Services\GoogleIdTokenVerifier;
 use App\Services\UserEmailPreferenceService;
-use Google\Client as GoogleClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
-use Throwable;
 use Illuminate\Validation\ValidationException;
 
 class GoogleAuthController extends Controller
 {
     public function __construct(
         private readonly AuthTokenService $authTokenService,
+        private readonly GoogleIdTokenVerifier $googleIdTokenVerifier,
         private readonly UserEmailPreferenceService $userEmailPreferenceService,
     ) {}
 
@@ -28,21 +29,16 @@ class GoogleAuthController extends Controller
     {
         $appType = MobileAppType::fromRequest($request);
         $idToken = $request->validated('id_token');
-        $clientId = trim((string) config('services.google.server_client_id'));
+        $allowedAudiences = $this->googleIdTokenVerifier->configuredAudiences();
 
-        if ($clientId === '') {
+        if ($allowedAudiences === []) {
             return response()->json([
                 'message' => 'Google sign-in is not configured on the server.',
             ], 500);
         }
 
-        try {
-            $payload = (new GoogleClient(['client_id' => $clientId]))->verifyIdToken($idToken);
-        } catch (Throwable) {
-            $payload = null;
-        }
-
-        if (! is_array($payload) || ($payload['aud'] ?? null) !== $clientId) {
+        $payload = $this->googleIdTokenVerifier->verify($idToken, $allowedAudiences);
+        if (! is_array($payload)) {
             throw ValidationException::withMessages([
                 'id_token' => ['The Google sign-in token is invalid.'],
             ]);
@@ -152,7 +148,7 @@ class GoogleAuthController extends Controller
                 [
                     'provider_type' => 'individual',
                     'display_name' => $user->name !== '' ? $user->name : $user->email,
-                    'verification_status' => \App\Enums\ProviderVerificationStatus::Pending,
+                    'verification_status' => ProviderVerificationStatus::Pending,
                 ],
             );
         }

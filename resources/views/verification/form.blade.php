@@ -1,33 +1,20 @@
 @extends('layouts.verification')
 
 @php
-    $pageTitle = 'Verify your account';
+    $pageTitle = 'Submit verification details';
     $isProviderFlow = (bool) ($isProviderFlow ?? false);
 @endphp
 
 @section('content')
     <section class="hero">
-        <p class="eyebrow">Verification</p>
-        <h1>Upload your verification details.</h1>
-        <p class="subtitle">
-            Add a clear selfie and your ID images before this secure session expires on
-            {{ $expiresAt?->timezone(config('app.timezone'))->format('D, d M Y \a\t H:i') }}.
-        </p>
+        <h1>SUBMIT VERIFICATION DETAILS</h1>
+        <p class="subtitle">Provide the required details below to complete your verification submission.</p>
         <div class="meta-bar">
-            <span class="pill">Selfie required</span>
-            <span class="pill">Front + back required</span>
-            @if ($isProviderFlow)
-                <span class="pill">Business licence optional</span>
-            @endif
-            <span class="pill">Images only</span>
+            <span class="pill">Upload clear, well-lit documents only.</span>
         </div>
     </section>
 
     <section class="card stack">
-        <div class="notice warning">
-            Use clear, well-lit images. Each file must be 10MB or less.
-        </div>
-
         @if ($errors->any())
             <div class="notice danger">
                 <ul class="error-list">
@@ -47,7 +34,7 @@
                 <div class="field-card">
                     <div class="field">
                         <div class="field-meta">
-                            <label for="selfie">Selfie image</label>
+                            <label for="selfie">Selfie image <span class="required-mark">*</span></label>
                             <span class="field-hint">Camera only</span>
                         </div>
                         <div class="preview-frame" data-preview-frame="selfie">
@@ -74,7 +61,7 @@
                 <h2>Step 2. Document details</h2>
                 <p>Select the ID you are submitting.</p>
                 <div class="field">
-                    <label for="id_type">ID type</label>
+                    <label for="id_type">ID type <span class="required-mark">*</span></label>
                     <select id="id_type" name="id_type" required>
                         <option value="">Choose ID type</option>
                         <option value="passport" @selected(old('id_type') === 'passport')>Passport</option>
@@ -89,7 +76,7 @@
                 <p>Upload the front and back of the same document.</p>
                 <div class="field-card">
                     <div class="field">
-                        <label for="id_front">ID front image</label>
+                        <label for="id_front">ID front image <span class="required-mark">*</span></label>
                         <div class="preview-frame" data-preview-frame="id_front">
                             <div class="preview-placeholder">The front of your ID will preview here.</div>
                         </div>
@@ -110,7 +97,7 @@
                 </div>
                 <div class="field-card">
                     <div class="field">
-                        <label for="id_back">ID back image</label>
+                        <label for="id_back">ID back image <span class="required-mark">*</span></label>
                         <div class="preview-frame" data-preview-frame="id_back">
                             <div class="preview-placeholder">The back of your ID will preview here.</div>
                         </div>
@@ -169,7 +156,7 @@
                         style="width:auto; margin-top:3px;"
                     >
                     <span style="font-size:14px; font-weight:600; line-height:1.6;">
-                        I confirm that I am 18 years or older.
+                        I confirm that I am 18 years or older. <span class="required-mark">*</span>
                     </span>
                 </label>
             </div>
@@ -178,10 +165,6 @@
                 <button id="submit-button" class="btn" type="submit" disabled>Submit Verification</button>
             </div>
         </form>
-
-        <p class="footer-note">
-            Return to the app after submitting to refresh your status.
-        </p>
     </section>
 
     <script>

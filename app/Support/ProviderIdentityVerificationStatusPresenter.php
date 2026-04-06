@@ -50,7 +50,7 @@ class ProviderIdentityVerificationStatusPresenter
         $payload['latest_session'] = $latestSession === null
             ? null
             : (new VerificationSessionResource($latestSession))->resolve();
-        $payload['status'] = $this->displayStatus($reviewStatus, $activeSession, $latestSession);
+        $payload['status'] = $this->displayStatus($reviewStatus);
         $payload['is_pending'] = $reviewStatus === ProviderVerificationStatus::Pending->value;
         $payload['is_verified'] = $reviewStatus === ProviderVerificationStatus::Approved->value;
         $payload['can_retry'] = ! in_array($reviewStatus, [
@@ -74,11 +74,8 @@ class ProviderIdentityVerificationStatusPresenter
             ]);
     }
 
-    private function displayStatus(
-        ?string $reviewStatus,
-        ?VerificationSession $activeSession,
-        ?VerificationSession $latestSession,
-    ): string {
+    private function displayStatus(?string $reviewStatus): string
+    {
         if ($reviewStatus === ProviderVerificationStatus::Approved->value) {
             return 'verified';
         }
@@ -87,19 +84,7 @@ class ProviderIdentityVerificationStatusPresenter
             return 'pending';
         }
 
-        if ($activeSession !== null) {
-            return 'open_session';
-        }
-
-        if ($reviewStatus === ProviderVerificationStatus::Rejected->value) {
-            return 'rejected';
-        }
-
-        if ($latestSession?->status === VerificationSessionStatus::Expired) {
-            return 'expired_session';
-        }
-
-        return 'not_started';
+        return 'unverified';
     }
 
     /**
@@ -109,7 +94,7 @@ class ProviderIdentityVerificationStatusPresenter
     {
         return [
             'public_id' => null,
-            'status' => 'not_started',
+            'status' => 'unverified',
             'id_type' => null,
             'submitted_at' => null,
             'reviewed_at' => null,

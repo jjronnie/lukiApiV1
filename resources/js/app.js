@@ -1,5 +1,13 @@
 import './bootstrap';
+import './custom.js';
+import Alpine from 'alpinejs';
+
 import createUgLocaleModule from 'ug-locale';
+
+
+window.Alpine = Alpine;
+
+Alpine.start();
 
 const createUgLocale = typeof createUgLocaleModule === 'function'
     ? createUgLocaleModule

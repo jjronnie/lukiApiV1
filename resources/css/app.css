@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Sora:wght@600;700&display=swap');
 @import 'tailwindcss';
+@import "./sidebar.css";
+@import "./nav.css";
+@import "./custom.css";
+@import "./buttons.css";
+@import "./form.css";
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -9,7 +14,7 @@
 @theme {
     --font-sans: 'Poppins', 'Segoe UI', sans-serif;
     --font-display: 'Sora', 'Segoe UI', sans-serif;
-    --color-primary: #f28c28;
+    --color-primary: #001529;
     --color-primary-soft: #fff2e2;
     --color-primary-dark: #d76a08;
     --color-surface: #ffffff;

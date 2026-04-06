@@ -32,12 +32,8 @@
                 type="button"
                 onclick="window.close(); setTimeout(() => { if (!window.closed) history.go(-1); }, 180);"
             >
-                Close Page
+                Okay
             </button>
         </div>
-
-        <p class="footer-note">
-            If this page does not close automatically, return to the app and refresh your verification status.
-        </p>
     </section>
 @endsection

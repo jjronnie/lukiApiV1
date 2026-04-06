@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>{{ $pageTitle ?? 'Identity Verification' }}</title>
+    <title>{{ config('app.name').' - '.($pageTitle ?? 'Verification') }}</title>
     <style>
         :root {
             color-scheme: light;
@@ -50,6 +50,15 @@
 
         .hero {
             padding: 10px 4px 18px;
+        }
+
+        .brand {
+            margin: 4px 0 22px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
         .eyebrow {
@@ -335,6 +344,10 @@
             line-height: 1.55;
         }
 
+        .required-mark {
+            color: #c67800;
+        }
+
         @media (max-width: 520px) {
             body {
                 padding-left: 10px;
@@ -358,6 +371,7 @@
 </head>
 <body>
     <main class="shell">
+        <div class="brand">{{ config('app.name') }}</div>
         @yield('content')
     </main>
 </body>
