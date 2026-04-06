@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Provider;
 
+use App\Enums\MobileAppType;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Provider\AcceptOfferRequest;
@@ -172,7 +173,7 @@ class ProviderOfferController extends Controller
         if ($executed->user !== null) {
             $this->notificationDispatcher->sendToUser(
                 $executed->user,
-                \App\Enums\MobileAppType::Customer,
+                MobileAppType::Customer,
                 'order_matched',
                 'Provider matched',
                 'A provider accepted your booking request.',

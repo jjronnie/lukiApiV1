@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1\Provider;
 
-use App\Enums\ProviderVerificationStatus;
 use App\Enums\ProviderServiceApprovalStatus;
+use App\Enums\ProviderVerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Provider\ProviderHeartbeatRequest;
 use App\Models\ProviderAvailability;

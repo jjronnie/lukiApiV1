@@ -11,8 +11,10 @@ class PopupModal extends Component
     /**
      * Create a new component instance.
      */
-  public string $buttonText;
+    public string $buttonText;
+
     public string $buttonIcon;
+
     public string $title;
 
     public function __construct(

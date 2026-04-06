@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>Edit Service</h1>
 <form method="POST" action="{{ route('admin.services.update', $service) }}">
     @csrf
@@ -41,4 +39,4 @@
     ])
     <button type="submit">Save</button>
 </form>
-@endsection
+</x-app-layout>

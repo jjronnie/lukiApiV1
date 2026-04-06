@@ -7,6 +7,7 @@ use Illuminate\View\Component;
 class LoadingButton extends Component
 {
     public $text;
+
     public $class;
 
     public function __construct($text = 'Submit', $class = '')

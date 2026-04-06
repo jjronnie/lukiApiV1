@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>Edit Add-on</h1>
 <form method="POST" action="{{ route('admin.addons.update', $addon) }}">
     @csrf
@@ -14,4 +12,4 @@
     <label><input type="checkbox" name="is_active" value="1" {{ $addon->is_active ? 'checked' : '' }} style="width:auto;"> Active</label>
     <button type="submit">Save</button>
 </form>
-@endsection
+</x-app-layout>

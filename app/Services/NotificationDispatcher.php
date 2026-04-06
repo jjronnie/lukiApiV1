@@ -93,6 +93,7 @@ class NotificationDispatcher
                     'is_active' => true,
                     'last_seen_at' => now(),
                 ])->save();
+
                 continue;
             }
 

@@ -12,7 +12,7 @@
     @php($currentUser = auth()->user())
     <div class="admin-shell">
         <button data-sidebar-open type="button"
-            class="fixed left-4 top-4 z-40 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-black/60 text-zinc-100 backdrop-blur md:hidden"
+            class="fixed left-4 top-4 z-40 inline-flex h-11 w-11 items-center justify-center rounded-sm border border-white/15 bg-black/60 text-zinc-100 backdrop-blur md:hidden"
             aria-label="Open sidebar">
             <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd"
@@ -29,7 +29,7 @@
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <div
-                        class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-cyan-300 to-sky-400 text-black shadow-lg shadow-cyan-700/40">
+                        class="grid h-11 w-11 place-items-center rounded-sm bg-gradient-to-br from-cyan-300 to-sky-400 text-black shadow-lg shadow-cyan-700/40">
                         <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path
                                 d="M10 2a.75.75 0 0 1 .75.75v.79l3.25 1.625V4.75a.75.75 0 0 1 1.5 0v1.175l1.415.708a.75.75 0 0 1 0 1.342l-1.415.707v1.568a.75.75 0 0 1-1.5 0V9.432l-3.25 1.625v3.193l1.703.851a.75.75 0 1 1-.67 1.342L10 15.559l-1.703.884a.75.75 0 1 1-.67-1.342l1.703-.85v-3.194L6.08 9.432v1.568a.75.75 0 0 1-1.5 0V9.682l-1.415-.707a.75.75 0 0 1 0-1.342l1.415-.708V4.75a.75.75 0 0 1 1.5 0v.424l3.25-1.625v-.79A.75.75 0 0 1 10 2Z" />
@@ -172,7 +172,7 @@
                 <p class="text-xs uppercase tracking-[0.14em] text-zinc-500">Account</p>
                 <div class="mt-3 flex items-center gap-3">
                     <div
-                        class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-sm font-semibold text-zinc-100">
+                        class="grid h-10 w-10 place-items-center rounded-sm bg-white/10 text-sm font-semibold text-zinc-100">
                         {{ strtoupper(substr($currentUser?->name ?? 'A', 0, 1)) }}</div>
                     <div class="min-w-0">
                         <p class="truncate text-sm font-medium text-zinc-100">{{ $currentUser?->name }}</p>
@@ -206,7 +206,7 @@
 
                 @if ($errors->any())
                     <div
-                        class="mb-4 rounded-xl border border-rose-300/35 bg-rose-300/10 px-4 py-3 text-sm text-rose-100">
+                        class="mb-4 rounded-sm border border-rose-300/35 bg-rose-300/10 px-4 py-3 text-sm text-rose-100">
                         @foreach ($errors->all() as $error)
                             <div>{{ $error }}</div>
                         @endforeach

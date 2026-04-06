@@ -3,7 +3,6 @@
 use App\Enums\RoleName;
 use App\Enums\UserIdentityVerificationStatus;
 use App\Models\User;
-use App\Models\UserIdentityVerification;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;

@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>{{ $service->name }}</h1>
 <p>Category: {{ $service->category?->name ?? '—' }}</p>
 <p>Slug: {{ $service->slug }}</p>
@@ -49,4 +47,4 @@
 <tr><td>{{ $rule->rule_type->value ?? $rule->rule_type }}</td><td>{{ $rule->priority }}</td></tr>
 @endforeach
 </tbody></table>
-@endsection
+</x-app-layout>

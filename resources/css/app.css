@@ -64,7 +64,7 @@
     }
 
     .admin-sidebar {
-        @apply fixed inset-y-3 left-3 z-50 flex w-72 flex-col rounded-3xl border border-[#f1e7dd] bg-white p-4 shadow-[0_35px_60px_rgba(31,41,55,0.08)] transition-transform duration-300 md:inset-y-4 md:left-4;
+        @apply fixed inset-y-3 left-3 z-50 flex w-72 flex-col rounded-sm border border-[#f1e7dd] bg-white p-4 shadow-[0_35px_60px_rgba(31,41,55,0.08)] transition-transform duration-300 md:inset-y-4 md:left-4;
     }
 
     .admin-main {
@@ -72,11 +72,11 @@
     }
 
     .admin-panel {
-        @apply rounded-3xl border border-[#f1e7dd] bg-white p-5 shadow-[0_18px_48px_rgba(31,41,55,0.08)];
+        @apply rounded-sm border border-[#f1e7dd] bg-white p-5 shadow-[0_18px_48px_rgba(31,41,55,0.08)];
     }
 
     .admin-nav-link {
-        @apply flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-medium text-[#6b7280] transition hover:border-[#f1e7dd] hover:bg-[#fff2e2] hover:text-[#1f2937];
+        @apply flex items-center gap-3 rounded-sm border border-transparent px-3 py-2.5 text-sm font-medium text-[#6b7280] transition hover:border-[#f1e7dd] hover:bg-[#fff2e2] hover:text-[#1f2937];
     }
 
     .admin-nav-link-active {
@@ -88,7 +88,7 @@
     }
 
     .admin-card {
-        @apply rounded-2xl border border-[#f1e7dd] bg-white p-5 shadow-[0_18px_40px_rgba(31,41,55,0.06)];
+        @apply rounded-sm border border-[#f1e7dd] bg-white p-5 shadow-[0_18px_40px_rgba(31,41,55,0.06)];
     }
 
     .admin-card-label {
@@ -104,7 +104,7 @@
     }
 
     .btn {
-        @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#f28c28]/40 bg-[#f28c28] px-4 py-2 text-sm font-medium text-white transition hover:border-[#d76a08] hover:bg-[#d76a08];
+        @apply inline-flex items-center justify-center gap-2 rounded-sm border border-[#f28c28]/40 bg-[#f28c28] px-4 py-2 text-sm font-medium text-white transition hover:border-[#d76a08] hover:bg-[#d76a08];
     }
 
     .btn-light {
@@ -117,5 +117,10 @@
 
     .actions {
         @apply flex flex-wrap items-center gap-2;
+    }
+    
+    /* Ensure tables visually read as cards on dark/light themes */
+    table {
+        background-color: #ffffff;
     }
 }

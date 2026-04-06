@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <div class="actions justify-between">
     <h1>Users</h1>
     <form method="GET" action="{{ route('admin.users.index') }}" class="flex flex-wrap items-end gap-2">
@@ -66,4 +64,4 @@
 </table>
 
 {{ $users->links() }}
-@endsection
+</x-app-layout>

@@ -1,5 +1,4 @@
-@extends('layouts.admin')
-
+<x-app-layout>
 @php
     $identityVerification = $provider->user?->providerIdentityVerification;
     $currentVerificationStatus = $provider->verification_status->value ?? $provider->verification_status;
@@ -8,7 +7,6 @@
     $initialReviewedServiceId = (int) old('selected_service_id', $provider->providerServices->sortByDesc('requested_at')->first()?->service_id ?? $services->first()?->id);
 @endphp
 
-@section('content')
     <div class="space-y-6">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -593,4 +591,4 @@
             });
         });
     </script>
-@endsection
+</x-app-layout>

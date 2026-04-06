@@ -1,15 +1,18 @@
 {
     "agents": [
         "codex",
-        "copilot"
+        "copilot",
+        "opencode"
     ],
     "guidelines": true,
     "herd_mcp": false,
     "mcp": true,
+    "nightwatch_mcp": false,
     "packages": [
         "laravel/fortify",
         "spatie/laravel-medialibrary",
-        "spatie/laravel-permission"
+        "spatie/laravel-permission",
+        "spatie/laravel-query-builder"
     ],
     "sail": true,
     "skills": [
@@ -17,6 +20,7 @@
         "tailwindcss-development",
         "fortify-development",
         "medialibrary-development",
-        "laravel-permission-development"
+        "laravel-permission-development",
+        "laravel-query-builder"
     ]
 }

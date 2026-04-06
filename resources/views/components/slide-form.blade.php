@@ -3,7 +3,7 @@
     <button @click="openForm = true" class="btn">
 
         @if ($buttonIcon)
-            <i data-lucide="{{ $buttonIcon }}" class="w-4 h-4 mr-1 ml-1"></i>
+            <x-dynamic-component :component="'lucide-'.$buttonIcon" class="w-4 h-4 mr-1 ml-1" />
         @endif
         {{ $buttonText }}
     </button>
@@ -18,7 +18,7 @@
         <!-- Header Row (fixed at top of drawer) -->
         <div class="flex items-center space-x-3 p-6 border-b">
             <button title="Close Form" @click="openForm = false" class="btn-danger-sm">
-                <i data-lucide="x" class="w-4 h-4"></i>
+                <x-lucide-x class="w-4 h-4" />
             </button>
             <h2 class="text-xl font-semibold">{{ $title }}</h2>
         </div>

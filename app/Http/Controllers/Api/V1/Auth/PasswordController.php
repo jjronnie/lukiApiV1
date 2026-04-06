@@ -22,6 +22,7 @@ use Illuminate\Validation\ValidationException;
 class PasswordController extends Controller
 {
     private const PASSWORD_RESET_TOKEN_TTL_MINUTES = 10;
+
     private const PASSWORD_CHANGE_TOKEN_TTL_MINUTES = 10;
 
     public function __construct(private readonly EmailOtpService $emailOtpService) {}

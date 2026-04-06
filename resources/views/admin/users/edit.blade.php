@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 @php($assignedRole = old('role', $managedUser->roles->pluck('name')->first() ?? \App\Enums\RoleName::User->value))
 @php($profile = $managedUser->providerProfile)
 
@@ -50,4 +48,4 @@
 
     <button type="submit">Save</button>
 </form>
-@endsection
+</x-app-layout>

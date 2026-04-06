@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>{{ $advert->title }}</h1>
 <p>Headline: {{ $advert->headline ?: '-' }}</p>
 <p>Description: {{ $advert->description ?: '-' }}</p>
@@ -23,4 +21,4 @@
         <img src="{{ $advert->image_url }}" alt="{{ $advert->title }}" style="max-width: 100%; border-radius: 16px;">
     </div>
 @endif
-@endsection
+</x-app-layout>

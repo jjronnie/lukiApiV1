@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>Edit Service Category</h1>
 <p>Use Iconsax icon names supported by the mobile apps. Example values: <code>scissor</code>, <code>brush_2</code>, <code>heart</code>, <code>magicpen</code>, <code>category</code>.</p>
 <form method="POST" action="{{ route('admin.service-categories.update', $category) }}">
@@ -15,4 +13,4 @@
     <label><input type="checkbox" name="is_active" value="1" {{ $category->is_active ? 'checked' : '' }} style="width:auto;"> Active</label>
     <button type="submit">Save</button>
 </form>
-@endsection
+</x-app-layout>

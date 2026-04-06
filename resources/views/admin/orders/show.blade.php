@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>Order {{ $order->public_id }}</h1>
 <p>Status: {{ $order->status->value ?? $order->status }}</p>
 <p>Booking Mode: {{ $order->booking_mode->value ?? $order->booking_mode }}</p>
@@ -42,4 +40,4 @@
 <tr><td>{{ $history->from_status }}</td><td>{{ $history->to_status }}</td><td>{{ $history->created_at }}</td></tr>
 @endforeach
 </tbody></table>
-@endsection
+</x-app-layout>

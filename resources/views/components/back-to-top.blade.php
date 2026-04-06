@@ -1,6 +1,6 @@
 <button id="backToTop"
     class="hidden fixed bottom-6 right-6 p-3 rounded-full text-white bg-blue-600 hover:bg-green-600 shadow-lg cursor-pointer z-50">
-    <i data-lucide="arrow-up" class="w-5 h-5"></i>
+    <x-lucide-arrow-up class="w-5 h-5" />
 </button>
 
 <script>

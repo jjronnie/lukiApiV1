@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>Edit Transport Zone</h1>
 <form method="POST" action="{{ route('admin.transport-zones.update', $zone) }}">
     @csrf
@@ -8,4 +6,4 @@
     @include('admin.transport-zones._form', ['zone' => $zone])
     <button type="submit">Save</button>
 </form>
-@endsection
+</x-app-layout>

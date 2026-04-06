@@ -26,8 +26,7 @@ class PriceEstimateService
         float $locationLng,
         int $serviceMinutes,
         ?string $promoCode = null,
-    ): array
-    {
+    ): array {
         $addOns = $service->addOns()->whereIn('id', $addOnIds)->where('is_active', true)->get();
 
         $baseAmount = $serviceTier->price_amount;

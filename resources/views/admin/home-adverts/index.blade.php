@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <div class="actions">
     <h1>Home Adverts</h1>
     <a class="btn" href="{{ route('admin.home-adverts.create') }}">New Advert</a>
@@ -37,4 +35,4 @@
     </tbody>
 </table>
 {{ $adverts->links() }}
-@endsection
+</x-app-layout>

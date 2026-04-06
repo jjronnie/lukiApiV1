@@ -9,9 +9,9 @@ use App\Http\Requests\Admin\UpdateServiceRequest;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Services\AuditLogService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class ServiceController extends Controller
@@ -115,6 +115,7 @@ class ServiceController extends Controller
             if ($tierId !== null && $existingTiers->has($tierId)) {
                 $existingTiers->get($tierId)?->update($payload);
                 $keptTierIds[] = (int) $tierId;
+
                 continue;
             }
 

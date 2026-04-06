@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
     <div class="space-y-6">
         <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
@@ -187,4 +185,4 @@
             </div>
         </section>
     </div>
-@endsection
+</x-app-layout>

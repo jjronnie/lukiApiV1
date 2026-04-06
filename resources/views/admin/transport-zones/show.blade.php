@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <div class="actions">
     <h1>{{ $zone->name }}</h1>
     <a class="btn" href="{{ route('admin.transport-zones.edit', $zone) }}">Edit</a>
@@ -17,4 +15,4 @@
 </p>
 <p>Fallback: {{ $zone->is_fallback ? 'Yes' : 'No' }}</p>
 <p>Status: {{ $zone->is_active ? 'Active' : 'Inactive' }}</p>
-@endsection
+</x-app-layout>

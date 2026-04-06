@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>Orders</h1>
 <table><thead><tr><th>Public ID</th><th>Service</th><th>Tier</th><th>Mode</th><th>User</th><th>Provider</th><th>Status</th><th>Total</th><th></th></tr></thead><tbody>
 @foreach($orders as $order)
@@ -18,4 +16,4 @@
 @endforeach
 </tbody></table>
 {{ $orders->links() }}
-@endsection
+</x-app-layout>

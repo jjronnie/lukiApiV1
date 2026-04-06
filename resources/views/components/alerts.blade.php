@@ -112,7 +112,7 @@ add('{{ session('status') }}', 'success');
             x-transition:leave="transition ease-in duration-300 transform"
             x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-full"
             @mouseenter="togglePause(alert.id)" @mouseleave="togglePause(alert.id)"
-            class="pointer-events-auto max-w-sm w-full bg-white rounded-xl shadow-lg border border-gray-300 overflow-hidden"
+            class="pointer-events-auto max-w-sm w-full bg-white rounded-sm shadow-lg border border-gray-300 overflow-hidden"
             role="alert">
 
             <div class="p-4 flex items-center justify-between space-x-4">

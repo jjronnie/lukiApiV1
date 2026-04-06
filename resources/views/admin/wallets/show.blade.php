@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>Wallet {{ $wallet->public_id }}</h1>
 <p>Provider: {{ $wallet->providerProfile->display_name }}</p>
 <p>Balance: {{ number_format($wallet->balance_amount) }}</p>
@@ -34,4 +32,4 @@
 </tr>
 @endforeach
 </tbody></table>
-@endsection
+</x-app-layout>

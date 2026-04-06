@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>Provider Applications</h1>
 <form method="GET" style="display:grid; gap:12px; grid-template-columns: 1.5fr 1fr auto; margin-bottom: 16px;">
     <input name="search" value="{{ $search ?? '' }}" placeholder="Search name, email, or provider number">
@@ -26,4 +24,4 @@
 @endforeach
 </tbody></table>
 {{ $providers->links() }}
-@endsection
+</x-app-layout>

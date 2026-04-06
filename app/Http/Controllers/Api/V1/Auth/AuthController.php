@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Enums\MobileAppType;
+use App\Enums\ProviderVerificationStatus;
 use App\Enums\RoleName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
@@ -337,7 +338,7 @@ class AuthController extends Controller
                 [
                     'provider_type' => 'individual',
                     'display_name' => $user->name !== '' ? $user->name : $user->email,
-                    'verification_status' => \App\Enums\ProviderVerificationStatus::Pending,
+                    'verification_status' => ProviderVerificationStatus::Pending,
                 ],
             );
         }

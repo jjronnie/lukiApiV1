@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <div class="actions"><h1>Pricing Rules</h1><a class="btn" href="{{ route('admin.pricing-rules.create') }}">New Rule</a></div>
 <table><thead><tr><th>Service</th><th>Type</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody>
 @foreach($rules as $rule)
@@ -14,4 +12,4 @@
 @endforeach
 </tbody></table>
 {{ $rules->links() }}
-@endsection
+</x-app-layout>

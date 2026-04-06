@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <div class="actions"><h1>Service Add-ons</h1><a class="btn" href="{{ route('admin.addons.create') }}">New Add-on</a></div>
 <table>
     <thead><tr><th>Service</th><th>Name</th><th>Price</th><th></th></tr></thead>
@@ -16,4 +14,4 @@
     </tbody>
 </table>
 {{ $addons->links() }}
-@endsection
+</x-app-layout>

@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\Provider\CancelProviderOrderRequest;
 use App\Http\Requests\Api\V1\Provider\StoreProviderOrderLocationRequest;
 use App\Http\Requests\Api\V1\Provider\UpdateOrderStatusRequest;
 use App\Http\Resources\OrderResource;
+use App\Mail\CustomerBookingSummaryMail;
 use App\Models\Order;
 use App\Services\CommissionService;
 use App\Services\IdempotencyService;
@@ -230,7 +231,7 @@ class ProviderOrderController extends Controller
             $preference = $this->userEmailPreferenceService->ensureForUser($order->user);
 
             if ($preference->booking_emails_enabled) {
-                Mail::to($order->user->email)->send(new \App\Mail\CustomerBookingSummaryMail(
+                Mail::to($order->user->email)->send(new CustomerBookingSummaryMail(
                     $order->loadMissing(['providerProfile.user', 'service', 'serviceTier', 'user'])
                 ));
             }

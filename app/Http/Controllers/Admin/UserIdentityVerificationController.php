@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditAction;
+use App\Enums\MobileAppType;
 use App\Enums\UserIdentityVerificationStatus;
 use App\Enums\VerificationSessionStatus;
 use App\Http\Controllers\Controller;
@@ -125,7 +126,7 @@ class UserIdentityVerificationController extends Controller
 
             $this->notificationDispatcher->sendToUser(
                 $verification->user,
-                \App\Enums\MobileAppType::Customer,
+                MobileAppType::Customer,
                 $isApproved ? 'verification_approved' : 'verification_rejected',
                 $isApproved ? 'Verification approved' : 'Verification rejected',
                 $isApproved

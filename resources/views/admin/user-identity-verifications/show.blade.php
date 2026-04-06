@@ -1,11 +1,9 @@
-@extends('layouts.admin')
-
+<x-app-layout>
 @php
     $currentStatus = $verification->status->value ?? $verification->status;
     $selectedStatus = old('status', in_array($currentStatus, ['approved', 'rejected'], true) ? $currentStatus : 'approved');
 @endphp
 
-@section('content')
     <div class="space-y-6">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -208,4 +206,4 @@
             </div>
         </section>
     </div>
-@endsection
+</x-app-layout>

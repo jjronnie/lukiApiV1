@@ -6,6 +6,7 @@ use App\Enums\UserIdentityVerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\CompleteCustomerProfileRequest;
 use App\Http\Resources\UserResource;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 
@@ -18,7 +19,7 @@ class CustomerProfileController extends Controller
         $verificationStatus = $user->identityVerification?->status;
         $nextFirstName = trim((string) ($data['first_name'] ?? $user->first_name ?? ''));
         $nextLastName = trim((string) ($data['last_name'] ?? $user->last_name ?? ''));
-        $nextName = \App\Models\User::combineName($nextFirstName, $nextLastName);
+        $nextName = User::combineName($nextFirstName, $nextLastName);
         $nameChanged = $nextName !== trim((string) $user->name);
 
         if ($nameChanged && $verificationStatus === UserIdentityVerificationStatus::Approved) {

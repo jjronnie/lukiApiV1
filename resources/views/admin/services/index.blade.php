@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <div class="actions">
     <h1>Services</h1>
     <a class="btn" href="{{ route('admin.services.create') }}">New Service</a>
@@ -34,4 +32,4 @@
     </tbody>
 </table>
 {{ $services->links() }}
-@endsection
+</x-app-layout>

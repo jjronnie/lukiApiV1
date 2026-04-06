@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>Create Commission Rule</h1>
 <form method="POST" action="{{ route('admin.commission-rules.store') }}">
     @csrf
@@ -14,4 +12,4 @@
     <label><input type="checkbox" name="is_active" value="1" checked style="width:auto;"> Active</label>
     <button type="submit">Create</button>
 </form>
-@endsection
+</x-app-layout>

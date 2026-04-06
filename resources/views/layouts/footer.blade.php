@@ -23,8 +23,8 @@
                 {{ $user->name }}
             </span>
 
-            <i data-lucide="chevron-up" x-show="open" class="w-4 h-4"></i>
-            <i data-lucide="chevron-down" x-show="!open" class="w-4 h-4"></i>
+            <x-lucide-chevron-up x-show="open" class="w-4 h-4" />
+            <x-lucide-chevron-down x-show="!open" class="w-4 h-4" />
         </button>
 
         <!-- Dropdown -->
@@ -37,7 +37,7 @@
             </div>
 
             <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 px-4 py-2 hover:bg-white/10 text-sm">
-                <i data-lucide="user" class="w-4 h-4"></i>
+                <x-lucide-user class="w-4 h-4" />
                 Profile
             </a>
 

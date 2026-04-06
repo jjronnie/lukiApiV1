@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Order;
 
+use App\Enums\MobileAppType;
 use App\Enums\OrderBookingMode;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
@@ -410,7 +411,7 @@ class UserOrderController extends Controller
         if ($order->providerProfile?->user !== null) {
             $this->notificationDispatcher->sendToUser(
                 $order->providerProfile->user,
-                \App\Enums\MobileAppType::Provider,
+                MobileAppType::Provider,
                 'order_cancelled',
                 'Order cancelled',
                 'A customer cancelled an order that was assigned to you.',

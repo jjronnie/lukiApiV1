@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <div class="actions">
     <h1>Create Home Advert</h1>
 </div>
@@ -10,4 +8,4 @@
     @include('admin.home-adverts._form', ['advert' => null])
     <button type="submit">Create</button>
 </form>
-@endsection
+</x-app-layout>

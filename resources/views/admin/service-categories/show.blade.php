@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>{{ $category->name }}</h1>
 <p>Slug: {{ $category->slug }}</p>
 <p>Icon Name: {{ $category->icon_name }}</p>
@@ -34,4 +32,4 @@
     @endforeach
     </tbody>
 </table>
-@endsection
+</x-app-layout>

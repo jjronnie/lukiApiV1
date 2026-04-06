@@ -7,6 +7,7 @@ use App\Http\Requests\Web\UpdateEmailPreferenceRequest;
 use App\Models\User;
 use App\Services\UserEmailPreferenceService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class EmailPreferenceController extends Controller
 {
@@ -73,7 +74,7 @@ class EmailPreferenceController extends Controller
         return $expiresAt > 0 && now()->timestamp > $expiresAt;
     }
 
-    private function expiresAt(Request $request): ?\Illuminate\Support\Carbon
+    private function expiresAt(Request $request): ?Carbon
     {
         $expiresAt = (int) $request->query('expires', 0);
 

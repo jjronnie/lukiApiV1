@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>Wallets</h1>
 <table><thead><tr><th>Provider</th><th>Balance</th><th>Hold</th><th>Min Required</th><th>Status</th><th></th></tr></thead><tbody>
 @foreach($wallets as $wallet)
@@ -15,4 +13,4 @@
 @endforeach
 </tbody></table>
 {{ $wallets->links() }}
-@endsection
+</x-app-layout>

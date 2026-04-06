@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<x-app-layout>
 <h1>Create Service</h1>
 <form method="POST" action="{{ route('admin.services.store') }}">
     @csrf
@@ -35,4 +33,4 @@
     ])
     <button type="submit">Create</button>
 </form>
-@endsection
+</x-app-layout>
