@@ -10,7 +10,7 @@
             <span>{{ $buttonText }}</span>
 
             @if ($buttonIcon)
-                <i data-lucide="{{ $buttonIcon }}" class="w-4 h-4 ml-1 mr-1 text-white"></i>
+                @svg('lucide-' . $buttonIcon, 'w-4 h-4 ml-1 mr-1 text-white')
             @endif
         </button>
     @endisset
@@ -32,7 +32,7 @@
                 <h2 class="text-xl font-semibold">{{ $title }}</h2>
 
                 <button @click="open = false" class="text-white bg-red-600 p-2 rounded-lg hover:bg-red-700"  title="Close">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+                    <x-lucide-x class="w-5 h-5" />
                 </button>
             </div>
 

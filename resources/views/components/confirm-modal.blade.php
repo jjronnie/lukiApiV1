@@ -14,7 +14,7 @@
     <button @click="showModal = true" type="button" title="{{ $title }}" class="{{ $triggerClass }}">
         {{ $triggerText }}
         @if ($triggerIcon)
-            <i data-lucide="{{ $triggerIcon }}" class="h-4 w-4"></i>
+            @svg('lucide-' . $triggerIcon, 'h-4 w-4')
         @endif
     </button>
 
@@ -25,7 +25,7 @@
 
         <div class="bg-white rounded-lg shadow-lg max-w-sm w-full p-6" @click.away="showModal = false">
             <h2 class="text-lg font-semibold text-yellow-500 flex items-center space-x-2">
-                <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-500"></i>
+                <x-lucide-alert-triangle class="w-5 h-5 text-yellow-500" />
                 <span>Warning</span>
             </h2>
 
@@ -59,7 +59,7 @@
                     {{ $slot ?? '' }}
                     <button type="submit" :disabled="!acknowledged" class="btn-submit  btn">
                         <span class="btn-text"> {{ $buttonText }}</span>
-                        <i data-lucide="loader" class="w-4 h-4 ml-2 animate-spin btn-spinner hidden"></i>
+                        <x-lucide-loader class="w-4 h-4 ml-2 animate-spin btn-spinner hidden" />
 
                     </button>
                 </form>

@@ -45,7 +45,7 @@
                 @csrf
                 <button type="submit"
                     class="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-600 text-sm text-left">
-                    <i data-lucide="power" class="w-4 h-4"></i>
+                    <x-lucide-power class="w-4 h-4" />
                     Log out
                 </button>
             </form>

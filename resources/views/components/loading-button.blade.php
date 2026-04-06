@@ -1,6 +1,6 @@
 <button type="submit" class="btn-submit  {{ $class }}">
     <span class="btn-text">{{ $text }}</span>
-    <i data-lucide="loader" class="w-4 h-4 ml-2 animate-spin btn-spinner hidden"></i>
+    <x-lucide-loader class="w-4 h-4 ml-2 animate-spin btn-spinner hidden" />
 </button>
 
 <script>

@@ -2,27 +2,22 @@
     colors: {
         'success': {
             text: 'text-green-600',
-            icon: 'circle-check-big',
             progress: 'bg-green-600'
         },
         'info': {
             text: 'text-blue-600',
-            icon: 'info',
             progress: 'bg-blue-600'
         },
         'warning': {
             text: 'text-yellow-600',
-            icon: 'alert-triangle',
             progress: 'bg-yellow-600'
         },
         'error': {
             text: 'text-red-600',
-            icon: 'x-circle',
             progress: 'bg-red-600'
         },
         'neutral': {
             text: 'text-gray-600',
-            icon: 'circle-help',
             progress: 'bg-gray-600'
         }
     },
@@ -81,9 +76,7 @@
     remove(id) {
         const alert = this.alerts.find(a => a.id === id);
         if (alert) {
-            // Set visibility to false to start the leave transition
             alert.isVisible = false;
-            // Remove the alert from the array after the transition completes
             setTimeout(() => {
                 this.alerts = this.alerts.filter(a => a.id !== id);
             }, 300);
@@ -117,24 +110,21 @@ add('{{ session('status') }}', 'success');
 
             <div class="p-4 flex items-center justify-between space-x-4">
                 <div class="flex-shrink-0" :class="colors[alert.type].text">
-
                     <template x-if="alert.type === 'success'">
-                        <i data-lucide="circle-check-big" class="w-6 h-6"></i>
+                        <x-lucide-circle-check-big class="w-6 h-6" />
                     </template>
                     <template x-if="alert.type === 'info'">
-                        <i data-lucide="info" class="w-6 h-6"></i>
+                        <x-lucide-info class="w-6 h-6" />
                     </template>
                     <template x-if="alert.type === 'warning'">
-                        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                        <x-lucide-alert-triangle class="w-6 h-6" />
                     </template>
                     <template x-if="alert.type === 'error'">
-                        <i data-lucide="x-circle" class="w-6 h-6"></i>
+                        <x-lucide-x-circle class="w-6 h-6" />
                     </template>
                     <template x-if="alert.type === 'neutral'">
-                        <i data-lucide="circle-help" class="w-6 h-6"></i>
+                        <x-lucide-circle-help class="w-6 h-6" />
                     </template>
-
-
                 </div>
 
                 <div class="flex-1 text-sm font-medium pr-4 text-gray-800" x-text="alert.message"></div>
@@ -143,8 +133,7 @@ add('{{ session('status') }}', 'success');
                     <button @click="remove(alert.id)"
                         :class="colors[alert.type].text +
                             ' hover:opacity-70 transition-colors duration-200 focus:outline-none p-1 -m-1'">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-
+                        <x-lucide-x class="w-5 h-5" />
                     </button>
                 </div>
             </div>

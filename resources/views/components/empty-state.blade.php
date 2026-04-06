@@ -9,7 +9,7 @@
     <div class="p-4 mb-4 bg-white border border-gray-200 rounded-full shadow-sm text-gray-400">
        
 
-            <i data-lucide="{{ $icon }}" class="w-8 h-8 "></i>
+            @svg('lucide-' . $icon, 'w-8 h-8')
 
 
     </div>
