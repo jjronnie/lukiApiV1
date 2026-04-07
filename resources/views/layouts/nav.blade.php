@@ -1,4 +1,4 @@
-<header class="fixed right-0 top-0 z-[9999] flex h-16 w-full items-center justify-between gap-4 border-b border-white/10 bg-primary/95 px-4 shadow-lg backdrop-blur lg:w-[calc(100%-16rem)] lg:px-6"
+<header class="fixed right-0 top-0 z-[9999] flex h-16 w-full items-center justify-between gap-4 border-b border-white/10 bg-white px-4  lg:w-[calc(100%-16rem)] lg:px-6"
     x-data="{ quickAccessOpen: false, notificationOpen: false }">
 
     <div class="hidden md:block"></div>
@@ -6,7 +6,7 @@
     <div class="ml-auto flex items-center gap-2">
         {{-- Notifications --}}
         <div class="relative" @click.away="notificationOpen = false">
-            <button class="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+            <button class="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-white/10 hover:text-gray-800"
                 @click="notificationOpen = !notificationOpen">
                 <x-lucide-bell class="h-5 w-5" />
                 <span
@@ -23,7 +23,7 @@
         {{-- User Menu --}}
         <div x-data="{ open: false, showLogoutModal: false }" class="relative">
             <button @click="open = !open"
-                class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
+                class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-white/10 hover:text-gray-800">
                 <x-lucide-circle-user-round class="h-6 w-6" />
             </button>
             <div x-show="open" @click.away="open = false" x-transition x-cloak
