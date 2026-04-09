@@ -4,6 +4,7 @@ use App\Enums\RoleName;
 use App\Models\RefreshToken;
 use App\Models\User;
 use App\Notifications\EmailOtpNotification;
+use App\Services\SmsService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -101,4 +102,83 @@ it('blocks admin logins on the api', function () {
     ]);
 
     $response->assertStatus(403);
+});
+
+it('registers and logs in using phone number otp', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    Notification::fake();
+
+    $codes = [];
+    $smsService = new class($codes) extends SmsService
+    {
+        /**
+         * @var array<int, string>
+         */
+        private array $codes;
+
+        /**
+         * @param  array<int, string>  $codes
+         */
+        public function __construct(array &$codes)
+        {
+            $this->codes = &$codes;
+        }
+
+        public function send(string $to, string $message): void
+        {
+            preg_match('/(\d{6})/', $message, $matches);
+            $this->codes[] = $matches[1] ?? '';
+        }
+    };
+    $this->app->instance(SmsService::class, $smsService);
+
+    $registerResponse = $this->postJson('/api/v1/auth/register', [
+        'app_type' => 'customer',
+        'auth_method' => 'phone',
+        'first_name' => 'Phone',
+        'last_name' => 'User',
+        'phone' => '0703283529',
+        'password' => 'Password123',
+        'password_confirmation' => 'Password123',
+    ]);
+
+    $registerResponse
+        ->assertStatus(202)
+        ->assertJson([
+            'phone' => '+256703283529',
+        ]);
+
+    $user = User::query()->where('phone', '+256703283529')->firstOrFail();
+
+    $registerOtpToken = $registerResponse->json('otp_token');
+
+    $registerVerifyResponse = $this->postJson('/api/v1/auth/register/verify', [
+        'app_type' => 'customer',
+        'phone' => '0703283529',
+        'otp_token' => $registerOtpToken,
+        'code' => $codes[0],
+    ]);
+
+    $registerVerifyResponse->assertSuccessful();
+
+    $loginResponse = $this->postJson('/api/v1/auth/login', [
+        'app_type' => 'customer',
+        'auth_method' => 'phone',
+        'phone' => '0703283529',
+        'password' => 'Password123',
+    ])->assertStatus(202);
+
+    $loginVerifyResponse = $this->postJson('/api/v1/auth/login/verify', [
+        'app_type' => 'customer',
+        'phone' => '0703283529',
+        'otp_token' => $loginResponse->json('otp_token'),
+        'code' => $codes[1],
+    ]);
+
+    $loginVerifyResponse
+        ->assertSuccessful()
+        ->assertJsonStructure(['access_token', 'refresh_token', 'user']);
+
+    expect($user->refresh()->phone_verified_at)->not->toBeNull();
+    Notification::assertNothingSent();
 });

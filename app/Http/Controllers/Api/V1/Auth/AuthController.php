@@ -37,15 +37,18 @@ class AuthController extends Controller
     {
         $data = $request->validated();
         $appType = MobileAppType::fromRequest($request);
+        $authMethod = $this->resolveAuthMethod($data);
 
         $firstName = trim((string) ($data['first_name'] ?? ''));
         $lastName = trim((string) ($data['last_name'] ?? ''));
         $name = User::combineName($firstName, $lastName);
 
         if ($name === '') {
-            [$firstName, $lastName] = User::splitName(
-                Str::of($data['email'])->before('@')->replace('.', ' ')->title()->value()
-            );
+            $fallbackName = $authMethod === 'phone'
+                ? 'Luki User '.substr((string) ($data['phone'] ?? ''), -4)
+                : Str::of((string) ($data['email'] ?? ''))->before('@')->replace('.', ' ')->title()->value();
+
+            [$firstName, $lastName] = User::splitName($fallbackName);
             $name = User::combineName($firstName, $lastName);
         }
 
@@ -53,9 +56,10 @@ class AuthController extends Controller
             'first_name' => $firstName,
             'last_name' => $lastName,
             'name' => $name,
-            'email' => strtolower($data['email']),
+            'email' => filled($data['email'] ?? null) ? strtolower((string) $data['email']) : null,
             'phone' => $data['phone'] ?? null,
             'password' => $data['password'],
+            'signup_method' => $authMethod,
         ]);
 
         $user->assignRole($appType->registrationRole());
@@ -63,8 +67,11 @@ class AuthController extends Controller
         $otp = $this->emailOtpService->issue($user, 'email_verification', $appType);
 
         return response()->json([
-            'message' => 'Verification code sent to email.',
+            'message' => $authMethod === 'phone'
+                ? 'Verification code sent to phone number.'
+                : 'Verification code sent to email.',
             'email' => $user->email,
+            'phone' => $user->phone,
             ...$otp,
         ], 202);
     }
@@ -73,18 +80,25 @@ class AuthController extends Controller
     {
         $data = $request->validated();
         $appType = MobileAppType::fromRequest($request);
+        $authMethod = $this->resolveAuthMethod($data);
 
-        $user = User::query()->where('email', strtolower($data['email']))->first();
+        $user = User::query()
+            ->when(
+                $authMethod === 'phone',
+                fn ($query) => $query->where('phone', $data['phone']),
+                fn ($query) => $query->where('email', strtolower((string) $data['email']))
+            )
+            ->first();
 
         if ($user === null || ! Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Invalid credentials.'],
+                $authMethod === 'phone' ? 'phone' : 'email' => ['Invalid credentials.'],
             ]);
         }
 
         if ($user->is_blocked) {
             throw ValidationException::withMessages([
-                'email' => ['This account is blocked.'],
+                $authMethod === 'phone' ? 'phone' : 'email' => ['This account is blocked.'],
             ]);
         }
 
@@ -95,8 +109,11 @@ class AuthController extends Controller
         $otp = $this->emailOtpService->issue($user, 'login', $appType);
 
         return response()->json([
-            'message' => 'Verification code sent to email.',
+            'message' => $authMethod === 'phone'
+                ? 'Verification code sent to phone number.'
+                : 'Verification code sent to email.',
             'email' => $user->email,
+            'phone' => $user->phone,
             ...$otp,
         ], 202);
     }
@@ -148,6 +165,7 @@ class AuthController extends Controller
         $data = $request->validated();
         $appType = MobileAppType::fromRequest($request);
         $email = strtolower((string) ($data['email'] ?? ''));
+        $phone = (string) ($data['phone'] ?? '');
 
         $record = $this->emailOtpService->verify(
             $data['otp_token'],
@@ -157,7 +175,7 @@ class AuthController extends Controller
         );
         $user = $record->user;
 
-        if ($user === null || ($email !== '' && $email !== strtolower($record->email))) {
+        if ($user === null || ! $this->matchesOtpIdentifier($record->email, $email, $phone)) {
             throw ValidationException::withMessages([
                 'code' => ['Invalid or expired verification code.'],
             ]);
@@ -167,8 +185,12 @@ class AuthController extends Controller
             return $error;
         }
 
-        if (! $user->hasVerifiedEmail()) {
+        if (filled($user->email) && ! $user->hasVerifiedEmail()) {
             $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
+        if (filled($user->phone) && $user->phone_verified_at === null) {
+            $user->forceFill(['phone_verified_at' => now()])->save();
         }
 
         $user->forceFill(['last_seen_at' => now()])->save();
@@ -188,6 +210,7 @@ class AuthController extends Controller
         $data = $request->validated();
         $appType = MobileAppType::fromRequest($request);
         $email = strtolower((string) ($data['email'] ?? ''));
+        $phone = (string) ($data['phone'] ?? '');
 
         $record = $this->emailOtpService->verify(
             $data['otp_token'],
@@ -197,7 +220,7 @@ class AuthController extends Controller
         );
         $user = $record->user;
 
-        if ($user === null || ($email !== '' && $email !== strtolower($record->email))) {
+        if ($user === null || ! $this->matchesOtpIdentifier($record->email, $email, $phone)) {
             throw ValidationException::withMessages([
                 'code' => ['Invalid or expired verification code.'],
             ]);
@@ -213,8 +236,12 @@ class AuthController extends Controller
             return $error;
         }
 
-        if (! $user->hasVerifiedEmail()) {
+        if (filled($user->email) && ! $user->hasVerifiedEmail()) {
             $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
+        if (filled($user->phone) && $user->phone_verified_at === null) {
+            $user->forceFill(['phone_verified_at' => now()])->save();
         }
 
         $user->forceFill(['last_seen_at' => now()])->save();
@@ -241,14 +268,15 @@ class AuthController extends Controller
 
         $payload = $this->emailOtpService->resend(
             $data['otp_token'],
-            $data['email'],
+            (string) ($data['email'] ?? $data['phone']),
             $purpose,
             $appType,
         );
 
         return response()->json([
-            'message' => 'A new verification code was sent to your email.',
-            'email' => strtolower($data['email']),
+            'message' => 'A new verification code was sent.',
+            'email' => isset($data['email']) ? strtolower((string) $data['email']) : null,
+            'phone' => $data['phone'] ?? null,
             ...$payload,
         ], 202);
     }
@@ -344,5 +372,31 @@ class AuthController extends Controller
         }
 
         return $user->fresh() ?? $user;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveAuthMethod(array $data): string
+    {
+        $authMethod = trim((string) ($data['auth_method'] ?? ''));
+        if (in_array($authMethod, ['email', 'phone'], true)) {
+            return $authMethod;
+        }
+
+        return filled($data['phone'] ?? null) && blank($data['email'] ?? null) ? 'phone' : 'email';
+    }
+
+    private function matchesOtpIdentifier(string $storedIdentifier, string $email, string $phone): bool
+    {
+        if ($email !== '' && $storedIdentifier === $email) {
+            return true;
+        }
+
+        if ($phone !== '' && $storedIdentifier === $phone) {
+            return true;
+        }
+
+        return $email === '' && $phone === '';
     }
 }

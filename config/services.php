@@ -47,4 +47,11 @@ return [
         'service_account_json' => env('FIREBASE_SERVICE_ACCOUNT_JSON'),
     ],
 
+    'sms' => [
+        'provider' => env('SMS_PROVIDER', 'africastalking'),
+        'username' => env('SMS_USERNAME', 'sandbox'),
+        'api_key' => env('SMS_API_KEY'),
+        'sender_id' => env('SMS_SENDER_ID'),
+    ],
+
 ];

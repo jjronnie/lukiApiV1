@@ -6,16 +6,20 @@ use App\Enums\MobileAppType;
 use App\Models\EmailOtp;
 use App\Models\User;
 use App\Notifications\EmailOtpNotification;
+use App\Support\IdentityValueNormalizer;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class EmailOtpService
 {
+    public function __construct(private readonly SmsService $smsService) {}
+
     /**
      * @return array{otp_token:string, expires_in:int, resend_available_in:int, resends_remaining:int, max_resends_per_hour:int}
      */
     public function issue(User $user, string $purpose, MobileAppType $appType): array
     {
+        $destination = $this->otpDestinationForUser($user);
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $token = Str::random(40);
 
@@ -28,7 +32,7 @@ class EmailOtpService
 
         EmailOtp::query()->create([
             'user_id' => $user->id,
-            'email' => strtolower($user->email),
+            'email' => $destination['value'],
             'purpose' => $purpose,
             'app_type' => $appType->value,
             'otp_hash' => $this->hashCode($code),
@@ -38,7 +42,7 @@ class EmailOtpService
             'expires_at' => now()->addMinutes($this->otpTtlMinutes()),
         ]);
 
-        $user->notify(new EmailOtpNotification($code, $purpose, $this->otpTtlMinutes()));
+        $this->dispatchOtp($user, $destination['channel'], $destination['value'], $code, $purpose);
 
         return [
             'otp_token' => $token,
@@ -54,7 +58,7 @@ class EmailOtpService
      */
     public function resend(
         string $otpToken,
-        string $email,
+        string $identifier,
         string $purpose,
         MobileAppType $appType,
     ): array {
@@ -65,7 +69,9 @@ class EmailOtpService
             ->whereNull('consumed_at')
             ->first();
 
-        if ($record === null || strtolower($record->email) !== strtolower($email)) {
+        $normalizedIdentifier = $this->normalizeIdentifier($identifier);
+
+        if ($record === null || $this->normalizeIdentifier($record->email) !== $normalizedIdentifier) {
             throw ValidationException::withMessages([
                 'otp_token' => ['Unable to resend the code for this request.'],
             ]);
@@ -102,7 +108,10 @@ class EmailOtpService
             'expires_at' => now()->addMinutes($this->otpTtlMinutes()),
         ]);
 
-        $record->user?->notify(new EmailOtpNotification($code, $purpose, $this->otpTtlMinutes()));
+        if ($record->user !== null) {
+            $destination = $this->otpDestinationForUser($record->user);
+            $this->dispatchOtp($record->user, $destination['channel'], $destination['value'], $code, $purpose);
+        }
 
         return [
             'otp_token' => $otpToken,
@@ -168,5 +177,60 @@ class EmailOtpService
     private function maxResendsPerHour(): int
     {
         return max(1, (int) config('luki.auth.otp_max_resends_per_hour', 5));
+    }
+
+    /**
+     * @return array{channel:string,value:string}
+     */
+    private function otpDestinationForUser(User $user): array
+    {
+        if (filled($user->phone)) {
+            return [
+                'channel' => 'phone',
+                'value' => (string) $user->phone,
+            ];
+        }
+
+        $email = IdentityValueNormalizer::email($user->email);
+        if ($email === '') {
+            throw ValidationException::withMessages([
+                'email' => ['No valid email or phone is available for OTP delivery.'],
+            ]);
+        }
+
+        return [
+            'channel' => 'email',
+            'value' => $email,
+        ];
+    }
+
+    private function dispatchOtp(
+        User $user,
+        string $channel,
+        string $destination,
+        string $code,
+        string $purpose,
+    ): void {
+        if ($channel === 'phone') {
+            $this->smsService->send(
+                $destination,
+                sprintf(
+                    'Your Luki verification code is %s. It expires in %d minutes.',
+                    $code,
+                    $this->otpTtlMinutes(),
+                ),
+            );
+
+            return;
+        }
+
+        $user->notify(new EmailOtpNotification($code, $purpose, $this->otpTtlMinutes()));
+    }
+
+    private function normalizeIdentifier(?string $value): string
+    {
+        $email = IdentityValueNormalizer::email($value);
+
+        return $email !== '' ? $email : trim((string) $value);
     }
 }

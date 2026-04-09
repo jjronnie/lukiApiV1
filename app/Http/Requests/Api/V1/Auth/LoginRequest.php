@@ -2,11 +2,27 @@
 
 namespace App\Http\Requests\Api\V1\Auth;
 
+use App\Support\IdentityValueNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class LoginRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $rawPhone = trim((string) $this->input('phone', ''));
+
+        $this->merge([
+            'email' => trim((string) $this->input('email', '')) !== ''
+                ? IdentityValueNormalizer::email($this->input('email'))
+                : null,
+            'phone' => $rawPhone !== ''
+                ? IdentityValueNormalizer::ugandaPhoneE164FromLocalInput($rawPhone)
+                : null,
+            'auth_method' => trim((string) $this->input('auth_method', '')),
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -19,7 +35,9 @@ class LoginRequest extends FormRequest
     {
         return [
             'app_type' => ['required', Rule::in(['customer', 'provider'])],
-            'email' => ['required', 'email'],
+            'auth_method' => ['nullable', Rule::in(['email', 'phone'])],
+            'email' => ['nullable', 'email', 'required_without:phone'],
+            'phone' => ['nullable', 'string', 'regex:/^\+256\d{9}$/', 'required_without:email'],
             'password' => ['required', 'string'],
         ];
     }

@@ -57,6 +57,21 @@ class IdentityValueNormalizer
             : '';
     }
 
+    public static function ugandaPhoneE164FromLocalInput(?string $value, string $countryCode = '+256'): string
+    {
+        $raw = trim((string) $value);
+
+        if (preg_match('/^\d{9}$/', $raw) === 1) {
+            return $countryCode.$raw;
+        }
+
+        if (preg_match('/^0\d{9}$/', $raw) === 1) {
+            return $countryCode.substr($raw, 1);
+        }
+
+        return '';
+    }
+
     public static function verificationIdNumber(?string $value): string
     {
         return Str::upper(preg_replace('/\s+/', '', trim((string) $value)) ?? '');
