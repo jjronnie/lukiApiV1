@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentMethod;
 use App\Support\IdentityValueNormalizer;
 use App\Traits\HasPublicId;
 use Database\Factories\UserFactory;
@@ -48,6 +49,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'last_seen_at',
         'profile_completed_at',
         'is_blocked',
+        'default_payment_method',
     ];
 
     /**
@@ -73,6 +75,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'profile_completed_at' => 'datetime',
             'is_blocked' => 'boolean',
             'password' => 'hashed',
+            'default_payment_method' => PaymentMethod::class,
         ];
     }
 

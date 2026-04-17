@@ -64,14 +64,17 @@ class AuthController extends Controller
 
         $user->assignRole($appType->registrationRole());
 
-        $otp = $this->emailOtpService->issue($user, 'email_verification', $appType);
+        $otp = $this->emailOtpService->issue(
+            $user,
+            'email_verification',
+            $appType,
+            $authMethod,
+            (string) ($data[$authMethod] ?? ''),
+        );
 
         return response()->json([
-            'message' => $authMethod === 'phone'
-                ? 'Verification code sent to phone number.'
-                : 'Verification code sent to email.',
-            'email' => $user->email,
-            'phone' => $user->phone,
+            'message' => $this->otpDispatchMessage($otp['channel']),
+            ...$this->otpChallengePayload($otp),
             ...$otp,
         ], 202);
     }
@@ -106,14 +109,17 @@ class AuthController extends Controller
             return $error;
         }
 
-        $otp = $this->emailOtpService->issue($user, 'login', $appType);
+        $otp = $this->emailOtpService->issue(
+            $user,
+            'login',
+            $appType,
+            $authMethod,
+            (string) ($data[$authMethod] ?? ''),
+        );
 
         return response()->json([
-            'message' => $authMethod === 'phone'
-                ? 'Verification code sent to phone number.'
-                : 'Verification code sent to email.',
-            'email' => $user->email,
-            'phone' => $user->phone,
+            'message' => $this->otpDispatchMessage($otp['channel']),
+            ...$this->otpChallengePayload($otp),
             ...$otp,
         ], 202);
     }
@@ -185,13 +191,7 @@ class AuthController extends Controller
             return $error;
         }
 
-        if (filled($user->email) && ! $user->hasVerifiedEmail()) {
-            $user->forceFill(['email_verified_at' => now()])->save();
-        }
-
-        if (filled($user->phone) && $user->phone_verified_at === null) {
-            $user->forceFill(['phone_verified_at' => now()])->save();
-        }
+        $this->markVerifiedIdentity($user, $record->email);
 
         $user->forceFill(['last_seen_at' => now()])->save();
 
@@ -228,7 +228,7 @@ class AuthController extends Controller
 
         if ($user->is_blocked) {
             throw ValidationException::withMessages([
-                'email' => ['This account is blocked.'],
+                $this->resolveIdentityField($data) => ['This account is blocked.'],
             ]);
         }
 
@@ -236,13 +236,7 @@ class AuthController extends Controller
             return $error;
         }
 
-        if (filled($user->email) && ! $user->hasVerifiedEmail()) {
-            $user->forceFill(['email_verified_at' => now()])->save();
-        }
-
-        if (filled($user->phone) && $user->phone_verified_at === null) {
-            $user->forceFill(['phone_verified_at' => now()])->save();
-        }
+        $this->markVerifiedIdentity($user, $record->email);
 
         $user->forceFill(['last_seen_at' => now()])->save();
 
@@ -274,9 +268,8 @@ class AuthController extends Controller
         );
 
         return response()->json([
-            'message' => 'A new verification code was sent.',
-            'email' => isset($data['email']) ? strtolower((string) $data['email']) : null,
-            'phone' => $data['phone'] ?? null,
+            'message' => $this->otpDispatchMessage($payload['channel'], true),
+            ...$this->otpChallengePayload($payload),
             ...$payload,
         ], 202);
     }
@@ -389,14 +382,60 @@ class AuthController extends Controller
 
     private function matchesOtpIdentifier(string $storedIdentifier, string $email, string $phone): bool
     {
-        if ($email !== '' && $storedIdentifier === $email) {
-            return true;
+        return ($email !== '' && $storedIdentifier === $email)
+            || ($phone !== '' && $storedIdentifier === $phone);
+    }
+
+    /**
+     * @param  array<string, mixed>  $otp
+     * @return array{email:?string,phone:?string}
+     */
+    private function otpChallengePayload(array $otp): array
+    {
+        return [
+            'email' => $otp['channel'] === 'email' ? $otp['destination'] : null,
+            'phone' => $otp['channel'] === 'phone' ? $otp['destination'] : null,
+        ];
+    }
+
+    private function otpDispatchMessage(string $channel, bool $isResend = false): string
+    {
+        if ($isResend) {
+            return $channel === 'phone'
+                ? 'A new verification code was sent to your phone number.'
+                : 'A new verification code was sent to your email address.';
         }
 
-        if ($phone !== '' && $storedIdentifier === $phone) {
-            return true;
+        return $channel === 'phone'
+            ? 'Verification code sent to phone number.'
+            : 'Verification code sent to email address.';
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveIdentityField(array $data): string
+    {
+        return filled($data['phone'] ?? null) ? 'phone' : 'email';
+    }
+
+    private function markVerifiedIdentity(User $user, string $identifier): void
+    {
+        if ($this->channelForIdentifier($identifier) === 'phone') {
+            if (filled($user->phone) && $user->phone_verified_at === null) {
+                $user->forceFill(['phone_verified_at' => now()])->save();
+            }
+
+            return;
         }
 
-        return $email === '' && $phone === '';
+        if (filled($user->email) && ! $user->hasVerifiedEmail()) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
+    }
+
+    private function channelForIdentifier(string $identifier): string
+    {
+        return preg_match('/^\+256\d{9}$/', $identifier) === 1 ? 'phone' : 'email';
     }
 }

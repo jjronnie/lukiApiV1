@@ -30,10 +30,41 @@ it('creates an order for the authenticated user', function () {
 
     $response
         ->assertCreated()
-        ->assertJsonPath('order.status', 'offering');
+        ->assertJsonPath('order.payment.method', 'cash');
 
     $this->assertDatabaseHas('orders', [
         'user_id' => $user->id,
-        'status' => 'offering',
+        'payment_method' => 'cash',
     ]);
+});
+
+it('can save the selected payment method as the customer default while placing an order', function () {
+    $this->seed([RolesAndPermissionsSeeder::class, ServiceSeeder::class]);
+
+    $user = User::factory()->create([
+        'default_payment_method' => 'cash',
+    ]);
+    $user->assignRole(RoleName::User->value);
+
+    $service = Service::query()->firstOrFail();
+    $tier = $service->tiers()->where('is_active', true)->firstOrFail();
+
+    $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/orders', [
+        'service_public_id' => $service->public_id,
+        'service_tier_public_id' => $tier->public_id,
+        'booking_mode' => 'normal',
+        'is_scheduled' => false,
+        'address_text' => 'Kampala Road',
+        'location_lat' => 0.3476,
+        'location_lng' => 32.5825,
+        'payment_method' => 'airtel',
+        'set_as_default_payment_method' => true,
+    ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('order.payment.method', 'airtel');
+
+    expect($user->fresh()->default_payment_method?->value ?? $user->fresh()->default_payment_method)
+        ->toBe('airtel');
 });

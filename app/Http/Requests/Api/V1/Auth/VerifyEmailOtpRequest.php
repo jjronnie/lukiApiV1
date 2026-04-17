@@ -34,10 +34,19 @@ class VerifyEmailOtpRequest extends FormRequest
     {
         return [
             'app_type' => ['required', Rule::in(['customer', 'provider'])],
-            'email' => ['nullable', 'email'],
-            'phone' => ['nullable', 'string', 'regex:/^\+256\d{9}$/'],
+            'email' => ['nullable', 'email', 'required_without:phone'],
+            'phone' => ['nullable', 'string', 'regex:/^\+256\d{9}$/', 'required_without:email'],
             'otp_token' => ['required', 'string', 'min:20'],
             'code' => ['required', 'digits:6'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.required_without' => 'Enter your email address or phone number.',
+            'phone.required_without' => 'Enter your phone number or email address.',
+            'phone.regex' => 'Enter a valid Uganda phone number.',
         ];
     }
 }

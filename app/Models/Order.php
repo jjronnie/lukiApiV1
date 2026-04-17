@@ -206,6 +206,7 @@ class Order extends Model
             OrderStatus::Accepted->value,
             OrderStatus::OnTheWay->value,
             OrderStatus::Arrived->value,
+            OrderStatus::InService->value,
         ], true);
     }
 

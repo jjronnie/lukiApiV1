@@ -38,7 +38,7 @@ it('validates auth register requires app_type', function () {
         ->assertJsonValidationErrors(['app_type']);
 });
 
-it('validates auth login requires email and password', function () {
+it('validates auth login requires an identifier and password', function () {
     $response = $this->postJson('/api/v1/auth/login', [
         'app_type' => 'customer',
         'password' => 'Password123',
@@ -46,7 +46,7 @@ it('validates auth login requires email and password', function () {
 
     $response
         ->assertStatus(422)
-        ->assertJsonValidationErrors(['email']);
+        ->assertJsonValidationErrors(['email', 'phone']);
 });
 
 it('validates auth refresh requires refresh token', function () {
@@ -59,14 +59,14 @@ it('validates auth refresh requires refresh token', function () {
         ->assertJsonValidationErrors(['refresh_token']);
 });
 
-it('validates auth forgot password requires email', function () {
+it('validates auth forgot password requires an identifier', function () {
     $response = $this->postJson('/api/v1/auth/password/forgot', [
         'app_type' => 'customer',
     ]);
 
     $response
         ->assertStatus(422)
-        ->assertJsonValidationErrors(['email']);
+        ->assertJsonValidationErrors(['email', 'phone']);
 });
 
 it('validates auth reset requires token and confirmation', function () {
@@ -78,7 +78,7 @@ it('validates auth reset requires token and confirmation', function () {
 
     $response
         ->assertStatus(422)
-        ->assertJsonValidationErrors(['otp_token', 'code', 'password']);
+        ->assertJsonValidationErrors(['reset_token', 'otp_token', 'password']);
 });
 
 it('validates auth google login requires id token', function () {
@@ -126,7 +126,7 @@ it('validates auth register otp verification fields', function () {
 
     $response
         ->assertStatus(422)
-        ->assertJsonValidationErrors(['app_type', 'email', 'otp_token', 'code']);
+        ->assertJsonValidationErrors(['app_type', 'email', 'phone', 'otp_token', 'code']);
 });
 
 it('validates auth login otp verification fields', function () {
@@ -134,7 +134,7 @@ it('validates auth login otp verification fields', function () {
 
     $response
         ->assertStatus(422)
-        ->assertJsonValidationErrors(['app_type', 'email', 'otp_token', 'code']);
+        ->assertJsonValidationErrors(['app_type', 'email', 'phone', 'otp_token', 'code']);
 });
 
 it('validates auth resend otp fields', function () {
@@ -142,7 +142,7 @@ it('validates auth resend otp fields', function () {
 
     $response
         ->assertStatus(422)
-        ->assertJsonValidationErrors(['app_type', 'email', 'otp_token', 'purpose']);
+        ->assertJsonValidationErrors(['app_type', 'email', 'phone', 'otp_token', 'purpose']);
 });
 
 it('validates order creation required fields', function () {
@@ -165,6 +165,32 @@ it('validates order creation required fields', function () {
             'payment_method',
             'booking_mode',
         ]);
+});
+
+it('does not require payment method when the customer has a saved default', function () {
+    $this->seed([RolesAndPermissionsSeeder::class, ServiceSeeder::class]);
+
+    $user = User::factory()->create([
+        'default_payment_method' => 'mtn',
+    ]);
+    $user->assignRole(RoleName::User->value);
+
+    $service = Service::query()->firstOrFail();
+    $tier = $service->tiers()->where('is_active', true)->firstOrFail();
+
+    $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/orders', [
+        'service_public_id' => $service->public_id,
+        'service_tier_public_id' => $tier->public_id,
+        'booking_mode' => 'normal',
+        'is_scheduled' => false,
+        'address_text' => 'Kampala Road',
+        'location_lat' => 0.3476,
+        'location_lng' => 32.5825,
+    ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('order.payment.method', 'mtn');
 });
 
 it('validates order creation payment method enum', function () {
@@ -244,6 +270,26 @@ it('validates customer profile completion fields', function () {
     $response
         ->assertStatus(422)
         ->assertJsonValidationErrors(['phone_country_code', 'phone_local_number']);
+});
+
+it('allows customer profile updates that only change the default payment method', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $user = User::factory()->create([
+        'phone' => '+256700000111',
+        'phone_country_code' => '+256',
+        'phone_local_number' => '700000111',
+    ]);
+    $user->assignRole(RoleName::User->value);
+
+    $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/customer/profile', [
+        'default_payment_method' => 'airtel',
+    ]);
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('message', 'Profile updated successfully.')
+        ->assertJsonPath('user.default_payment_method', 'airtel');
 });
 
 it('validates provider documents require file and document type', function () {

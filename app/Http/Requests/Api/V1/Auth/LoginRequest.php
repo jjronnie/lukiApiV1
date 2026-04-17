@@ -41,4 +41,13 @@ class LoginRequest extends FormRequest
             'password' => ['required', 'string'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'email.required_without' => 'Enter your email address or phone number.',
+            'phone.required_without' => 'Enter your phone number or email address.',
+            'phone.regex' => 'Enter a valid Uganda phone number.',
+        ];
+    }
 }

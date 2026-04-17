@@ -135,7 +135,7 @@ it('allows customer cancellation before the service starts', function (OrderStat
     ],
 ]);
 
-it('blocks customer cancellation once the service has started', function () {
+it('allows customer cancellation after the service has started and without a reason', function () {
     $customer = createCustomer();
     ['profile' => $providerProfile] = createProvider();
 
@@ -153,16 +153,20 @@ it('blocks customer cancellation once the service has started', function () {
 
     $showResponse
         ->assertOk()
-        ->assertJsonPath('data.actions.customer_can_cancel', false);
+        ->assertJsonPath('data.actions.customer_can_cancel', true);
 
     $cancelResponse = $this->actingAs($customer, 'sanctum')
-        ->postJson('/api/v1/orders/'.$order->public_id.'/cancel', [
-            'reason' => 'I changed my mind.',
-        ]);
+        ->postJson('/api/v1/orders/'.$order->public_id.'/cancel', []);
 
     $cancelResponse
-        ->assertUnprocessable()
-        ->assertJsonPath('message', 'Order cannot be cancelled in current status.');
+        ->assertOk()
+        ->assertJsonPath('message', 'Order cancelled.');
+
+    $this->assertDatabaseHas('orders', [
+        'id' => $order->id,
+        'status' => OrderStatus::Cancelled->value,
+        'cancellation_reason' => null,
+    ]);
 });
 
 it('marks completed rated orders as already rated in the order resource', function () {

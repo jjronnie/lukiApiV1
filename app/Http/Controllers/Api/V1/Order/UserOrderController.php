@@ -38,6 +38,15 @@ class UserOrderController extends Controller
     public function store(StoreOrderRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $selectedPaymentMethod = $data['payment_method']
+            ?? $request->user()->default_payment_method?->value
+            ?? $request->user()->default_payment_method;
+
+        if ($selectedPaymentMethod === null) {
+            throw ValidationException::withMessages([
+                'payment_method' => ['Choose a payment method before continuing.'],
+            ]);
+        }
 
         $idempotencyKey = $data['idempotency_key'] ?? $request->header('Idempotency-Key');
         $requestHash = hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
@@ -105,6 +114,7 @@ class UserOrderController extends Controller
                 $serviceTier,
                 $addOnIds,
                 $breakdown,
+                $selectedPaymentMethod,
             ) {
                 return DB::transaction(function () use (
                     $request,
@@ -113,6 +123,7 @@ class UserOrderController extends Controller
                     $serviceTier,
                     $addOnIds,
                     $breakdown,
+                    $selectedPaymentMethod,
                 ) {
                     $hasActiveSameService = Order::query()
                         ->where('user_id', $request->user()->id)
@@ -145,7 +156,7 @@ class UserOrderController extends Controller
                         'location_lat' => $data['location_lat'],
                         'location_lng' => $data['location_lng'],
                         'place_id' => $data['place_id'] ?? null,
-                        'payment_method' => $data['payment_method'],
+                        'payment_method' => $selectedPaymentMethod,
                         'payment_status' => PaymentStatus::Unpaid,
                         'subtotal_amount' => $breakdown['subtotal_amount'],
                         'transport_fee_amount' => $breakdown['transport_fee_amount'],
@@ -189,6 +200,12 @@ class UserOrderController extends Controller
                         'meta' => ['source' => 'user_order_create'],
                         'created_at' => now(),
                     ]);
+
+                    if (($data['set_as_default_payment_method'] ?? false) && $selectedPaymentMethod !== null) {
+                        $request->user()->forceFill([
+                            'default_payment_method' => $selectedPaymentMethod,
+                        ])->save();
+                    }
 
                     return $order;
                 });
@@ -371,12 +388,6 @@ class UserOrderController extends Controller
 
         if (! $order->canBeCancelledByCustomer()) {
             return response()->json(['message' => 'Order cannot be cancelled in current status.'], 422);
-        }
-
-        if ($order->status === OrderStatus::Accepted && blank($request->validated('reason'))) {
-            return response()->json([
-                'message' => 'Please provide a cancellation reason for an accepted order.',
-            ], 422);
         }
 
         $cancelFee = 0;

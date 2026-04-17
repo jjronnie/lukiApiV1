@@ -15,11 +15,16 @@ class EmailOtpService
     public function __construct(private readonly SmsService $smsService) {}
 
     /**
-     * @return array{otp_token:string, expires_in:int, resend_available_in:int, resends_remaining:int, max_resends_per_hour:int}
+     * @return array{otp_token:string, expires_in:int, resend_available_in:int, resends_remaining:int, max_resends_per_hour:int, channel:string, destination:string}
      */
-    public function issue(User $user, string $purpose, MobileAppType $appType): array
-    {
-        $destination = $this->otpDestinationForUser($user);
+    public function issue(
+        User $user,
+        string $purpose,
+        MobileAppType $appType,
+        ?string $preferredChannel = null,
+        ?string $preferredIdentifier = null,
+    ): array {
+        $destination = $this->otpDestinationForUser($user, $preferredChannel, $preferredIdentifier);
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $token = Str::random(40);
 
@@ -50,11 +55,13 @@ class EmailOtpService
             'resend_available_in' => $this->resendCooldownSeconds(),
             'resends_remaining' => $this->maxResendsPerHour(),
             'max_resends_per_hour' => $this->maxResendsPerHour(),
+            'channel' => $destination['channel'],
+            'destination' => $destination['value'],
         ];
     }
 
     /**
-     * @return array{otp_token:string, expires_in:int, resend_available_in:int, resends_remaining:int, max_resends_per_hour:int}
+     * @return array{otp_token:string, expires_in:int, resend_available_in:int, resends_remaining:int, max_resends_per_hour:int, channel:string, destination:string}
      */
     public function resend(
         string $otpToken,
@@ -108,9 +115,11 @@ class EmailOtpService
             'expires_at' => now()->addMinutes($this->otpTtlMinutes()),
         ]);
 
+        $channel = $this->channelForIdentifier($record->email);
+        $destination = $record->email;
+
         if ($record->user !== null) {
-            $destination = $this->otpDestinationForUser($record->user);
-            $this->dispatchOtp($record->user, $destination['channel'], $destination['value'], $code, $purpose);
+            $this->dispatchOtp($record->user, $channel, $destination, $code, $purpose);
         }
 
         return [
@@ -119,6 +128,8 @@ class EmailOtpService
             'resend_available_in' => $this->resendCooldownSeconds(),
             'resends_remaining' => max(0, $this->maxResendsPerHour() - (int) $record->resend_count),
             'max_resends_per_hour' => $this->maxResendsPerHour(),
+            'channel' => $channel,
+            'destination' => $destination,
         ];
     }
 
@@ -182,8 +193,53 @@ class EmailOtpService
     /**
      * @return array{channel:string,value:string}
      */
-    private function otpDestinationForUser(User $user): array
-    {
+    private function otpDestinationForUser(
+        User $user,
+        ?string $preferredChannel = null,
+        ?string $preferredIdentifier = null,
+    ): array {
+        $preferredChannel = in_array($preferredChannel, ['email', 'phone'], true)
+            ? $preferredChannel
+            : null;
+
+        if ($preferredChannel === 'phone') {
+            $phone = $this->matchingPhoneDestination($user, $preferredIdentifier);
+            if ($phone !== null) {
+                return [
+                    'channel' => 'phone',
+                    'value' => $phone,
+                ];
+            }
+        }
+
+        if ($preferredChannel === 'email') {
+            $email = $this->matchingEmailDestination($user, $preferredIdentifier);
+            if ($email !== null) {
+                return [
+                    'channel' => 'email',
+                    'value' => $email,
+                ];
+            }
+        }
+
+        if ($preferredChannel === null && filled($preferredIdentifier)) {
+            $phone = $this->matchingPhoneDestination($user, $preferredIdentifier);
+            if ($phone !== null) {
+                return [
+                    'channel' => 'phone',
+                    'value' => $phone,
+                ];
+            }
+
+            $email = $this->matchingEmailDestination($user, $preferredIdentifier);
+            if ($email !== null) {
+                return [
+                    'channel' => 'email',
+                    'value' => $email,
+                ];
+            }
+        }
+
         if (filled($user->phone)) {
             return [
                 'channel' => 'phone',
@@ -202,6 +258,38 @@ class EmailOtpService
             'channel' => 'email',
             'value' => $email,
         ];
+    }
+
+    private function matchingPhoneDestination(User $user, ?string $preferredIdentifier): ?string
+    {
+        $userPhone = trim((string) $user->phone);
+        if ($userPhone === '') {
+            return null;
+        }
+
+        if (! filled($preferredIdentifier)) {
+            return $userPhone;
+        }
+
+        return IdentityValueNormalizer::ugandaPhoneE164FromLocalInput($preferredIdentifier) === $userPhone
+            ? $userPhone
+            : null;
+    }
+
+    private function matchingEmailDestination(User $user, ?string $preferredIdentifier): ?string
+    {
+        $userEmail = IdentityValueNormalizer::email($user->email);
+        if ($userEmail === '') {
+            return null;
+        }
+
+        if (! filled($preferredIdentifier)) {
+            return $userEmail;
+        }
+
+        return IdentityValueNormalizer::email($preferredIdentifier) === $userEmail
+            ? $userEmail
+            : null;
     }
 
     private function dispatchOtp(
@@ -231,6 +319,17 @@ class EmailOtpService
     {
         $email = IdentityValueNormalizer::email($value);
 
-        return $email !== '' ? $email : trim((string) $value);
+        if ($email !== '') {
+            return $email;
+        }
+
+        $phone = IdentityValueNormalizer::ugandaPhoneE164FromLocalInput($value);
+
+        return $phone !== '' ? $phone : trim((string) $value);
+    }
+
+    private function channelForIdentifier(string $identifier): string
+    {
+        return preg_match('/^\+256\d{9}$/', $identifier) === 1 ? 'phone' : 'email';
     }
 }

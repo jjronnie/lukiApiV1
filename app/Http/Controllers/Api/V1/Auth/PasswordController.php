@@ -29,19 +29,21 @@ class PasswordController extends Controller
 
     public function forgot(ForgotPasswordRequest $request): JsonResponse
     {
+        $data = $request->validated();
         $appType = MobileAppType::fromRequest($request);
-        $email = strtolower($request->validated('email'));
-        $user = User::query()->where('email', $email)->first();
+        $identityField = $this->resolveIdentityField($data);
+        $identifier = (string) $data[$identityField];
+        $user = User::query()->where($identityField, $identifier)->first();
 
         if ($user === null) {
             throw ValidationException::withMessages([
-                'email' => ['No account was found with that email address.'],
+                $identityField => ['We could not start password recovery for those details.'],
             ]);
         }
 
         if ($user->is_blocked) {
             throw ValidationException::withMessages([
-                'email' => ['This account is blocked.'],
+                $identityField => ['This account is blocked.'],
             ]);
         }
 
@@ -49,11 +51,17 @@ class PasswordController extends Controller
             return $error;
         }
 
-        $otp = $this->emailOtpService->issue($user, 'password_reset', $appType);
+        $otp = $this->emailOtpService->issue(
+            $user,
+            'password_reset',
+            $appType,
+            $identityField,
+            $identifier,
+        );
 
         return response()->json([
-            'message' => 'Verification code sent to email.',
-            'email' => $email,
+            'message' => $this->otpDispatchMessage($otp['channel']),
+            ...$this->otpChallengePayload($otp),
             ...$otp,
         ], 202);
     }
@@ -63,6 +71,7 @@ class PasswordController extends Controller
         $data = $request->validated();
         $appType = MobileAppType::fromRequest($request);
         $email = strtolower((string) ($data['email'] ?? ''));
+        $phone = (string) ($data['phone'] ?? '');
 
         $record = $this->emailOtpService->verify(
             $data['otp_token'],
@@ -71,7 +80,7 @@ class PasswordController extends Controller
             $appType,
         );
 
-        if ($record->user === null || ($email !== '' && strtolower($record->email) !== $email)) {
+        if ($record->user === null || ! $this->matchesOtpIdentifier($record->email, $email, $phone)) {
             throw ValidationException::withMessages([
                 'code' => ['Invalid or expired verification code.'],
             ]);
@@ -81,7 +90,7 @@ class PasswordController extends Controller
 
         if ($user->is_blocked) {
             throw ValidationException::withMessages([
-                'email' => ['This account is blocked.'],
+                $this->resolveIdentityField($data) => ['This account is blocked.'],
             ]);
         }
 
@@ -95,7 +104,8 @@ class PasswordController extends Controller
             $this->passwordResetCacheKey($resetToken),
             [
                 'user_id' => $user->id,
-                'email' => strtolower($user->email),
+                'identifier' => $record->email,
+                'channel' => $this->channelForIdentifier($record->email),
                 'app_type' => $appType->value,
             ],
             now()->addMinutes(self::PASSWORD_RESET_TOKEN_TTL_MINUTES),
@@ -103,7 +113,7 @@ class PasswordController extends Controller
 
         return response()->json([
             'message' => 'Code verified successfully.',
-            'email' => strtolower($user->email),
+            ...$this->identifierPayload($record->email),
             'reset_token' => $resetToken,
             'expires_in' => self::PASSWORD_RESET_TOKEN_TTL_MINUTES * 60,
         ]);
@@ -113,6 +123,8 @@ class PasswordController extends Controller
     {
         $data = $request->validated();
         $appType = MobileAppType::fromRequest($request);
+        $identityField = $this->resolveIdentityField($data);
+        $identifier = (string) $data[$identityField];
         $user = null;
 
         if (! empty($data['reset_token'])) {
@@ -120,7 +132,8 @@ class PasswordController extends Controller
 
             if (! is_array($payload) ||
                 ($payload['app_type'] ?? null) !== $appType->value ||
-                strtolower((string) ($payload['email'] ?? '')) !== strtolower($data['email'])) {
+                ($payload['channel'] ?? null) !== $identityField ||
+                (string) ($payload['identifier'] ?? '') !== $identifier) {
                 throw ValidationException::withMessages([
                     'reset_token' => ['Reset session has expired. Please verify your code again.'],
                 ]);
@@ -142,7 +155,11 @@ class PasswordController extends Controller
                 $appType,
             );
 
-            if ($record->user === null || strtolower($record->email) !== strtolower($data['email'])) {
+            if ($record->user === null || ! $this->matchesOtpIdentifier(
+                $record->email,
+                strtolower((string) ($data['email'] ?? '')),
+                (string) ($data['phone'] ?? ''),
+            )) {
                 throw ValidationException::withMessages([
                     'code' => ['Invalid or expired verification code.'],
                 ]);
@@ -153,7 +170,7 @@ class PasswordController extends Controller
 
         if ($user->is_blocked) {
             throw ValidationException::withMessages([
-                'email' => ['This account is blocked.'],
+                $identityField => ['This account is blocked.'],
             ]);
         }
 
@@ -161,11 +178,20 @@ class PasswordController extends Controller
             return $error;
         }
 
-        $user->forceFill([
+        $updates = [
             'password' => $data['password'],
             'remember_token' => Str::random(60),
-            'email_verified_at' => $user->email_verified_at ?? now(),
-        ])->save();
+        ];
+
+        if ($identityField === 'email' && $user->email_verified_at === null) {
+            $updates['email_verified_at'] = now();
+        }
+
+        if ($identityField === 'phone' && $user->phone_verified_at === null) {
+            $updates['phone_verified_at'] = now();
+        }
+
+        $user->forceFill($updates)->save();
 
         $user->tokens()->delete();
         $user->refreshTokens()->update(['revoked_at' => now()]);
@@ -198,8 +224,8 @@ class PasswordController extends Controller
         $otp = $this->emailOtpService->issue($user, 'password_change', $appType);
 
         return response()->json([
-            'message' => 'Verification code sent to email.',
-            'email' => strtolower($user->email),
+            'message' => $this->otpDispatchMessage($otp['channel']),
+            ...$this->otpChallengePayload($otp),
             ...$otp,
         ], 202);
     }
@@ -247,7 +273,7 @@ class PasswordController extends Controller
 
         return response()->json([
             'message' => 'Code verified successfully.',
-            'email' => strtolower($user->email),
+            ...$this->identifierPayload($record->email),
             'change_token' => $changeToken,
             'expires_in' => self::PASSWORD_CHANGE_TOKEN_TTL_MINUTES * 60,
         ]);
@@ -316,5 +342,54 @@ class PasswordController extends Controller
     private function passwordChangeCacheKey(string $changeToken): string
     {
         return 'password_change:'.hash('sha256', $changeToken);
+    }
+
+    /**
+     * @param  array<string, mixed>  $otp
+     * @return array{email:?string,phone:?string}
+     */
+    private function otpChallengePayload(array $otp): array
+    {
+        return [
+            'email' => $otp['channel'] === 'email' ? $otp['destination'] : null,
+            'phone' => $otp['channel'] === 'phone' ? $otp['destination'] : null,
+        ];
+    }
+
+    /**
+     * @return array{email:?string,phone:?string}
+     */
+    private function identifierPayload(string $identifier): array
+    {
+        return [
+            'email' => $this->channelForIdentifier($identifier) === 'email' ? $identifier : null,
+            'phone' => $this->channelForIdentifier($identifier) === 'phone' ? $identifier : null,
+        ];
+    }
+
+    private function otpDispatchMessage(string $channel): string
+    {
+        return $channel === 'phone'
+            ? 'Verification code sent to phone number.'
+            : 'Verification code sent to email address.';
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveIdentityField(array $data): string
+    {
+        return filled($data['phone'] ?? null) ? 'phone' : 'email';
+    }
+
+    private function matchesOtpIdentifier(string $storedIdentifier, string $email, string $phone): bool
+    {
+        return ($email !== '' && $storedIdentifier === $email)
+            || ($phone !== '' && $storedIdentifier === $phone);
+    }
+
+    private function channelForIdentifier(string $identifier): string
+    {
+        return preg_match('/^\+256\d{9}$/', $identifier) === 1 ? 'phone' : 'email';
     }
 }

@@ -154,7 +154,7 @@ it('registers and logs in using phone number otp', function () {
 
     $registerVerifyResponse = $this->postJson('/api/v1/auth/register/verify', [
         'app_type' => 'customer',
-        'phone' => '0703283529',
+        'phone' => $registerResponse->json('phone'),
         'otp_token' => $registerOtpToken,
         'code' => $codes[0],
     ]);
@@ -170,7 +170,7 @@ it('registers and logs in using phone number otp', function () {
 
     $loginVerifyResponse = $this->postJson('/api/v1/auth/login/verify', [
         'app_type' => 'customer',
-        'phone' => '0703283529',
+        'phone' => $loginResponse->json('phone'),
         'otp_token' => $loginResponse->json('otp_token'),
         'code' => $codes[1],
     ]);
@@ -181,4 +181,169 @@ it('registers and logs in using phone number otp', function () {
 
     expect($user->refresh()->phone_verified_at)->not->toBeNull();
     Notification::assertNothingSent();
+});
+
+it('sends login verification to email when email is chosen', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    Notification::fake();
+
+    $smsService = new class extends SmsService
+    {
+        public int $sendCount = 0;
+
+        public function send(string $to, string $message): void
+        {
+            $this->sendCount++;
+        }
+    };
+    $this->app->instance(SmsService::class, $smsService);
+
+    $user = User::factory()->create([
+        'email' => 'email-login@example.com',
+        'phone' => '+256703283529',
+        'password' => Hash::make('Password123'),
+    ]);
+    $user->assignRole(RoleName::User->value);
+
+    $response = $this->postJson('/api/v1/auth/login', [
+        'app_type' => 'customer',
+        'auth_method' => 'email',
+        'email' => 'email-login@example.com',
+        'password' => 'Password123',
+    ]);
+
+    $response
+        ->assertStatus(202)
+        ->assertJson([
+            'email' => 'email-login@example.com',
+            'phone' => null,
+        ]);
+
+    $notification = Notification::sent($user, EmailOtpNotification::class)->last();
+
+    $verifyResponse = $this->postJson('/api/v1/auth/login/verify', [
+        'app_type' => 'customer',
+        'email' => 'email-login@example.com',
+        'otp_token' => $response->json('otp_token'),
+        'code' => $notification->code,
+    ]);
+
+    $verifyResponse->assertSuccessful();
+
+    Notification::assertSentTo($user, EmailOtpNotification::class);
+    expect($smsService->sendCount)->toBe(0);
+    expect($user->refresh()->email_verified_at)->not->toBeNull();
+    expect($user->phone_verified_at)->toBeNull();
+});
+
+it('resets password using phone verification for the customer app', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $codes = [];
+    $smsService = new class($codes) extends SmsService
+    {
+        /**
+         * @var array<int, string>
+         */
+        private array $codes;
+
+        /**
+         * @param  array<int, string>  $codes
+         */
+        public function __construct(array &$codes)
+        {
+            $this->codes = &$codes;
+        }
+
+        public function send(string $to, string $message): void
+        {
+            preg_match('/(\d{6})/', $message, $matches);
+            $this->codes[] = $matches[1] ?? '';
+        }
+    };
+    $this->app->instance(SmsService::class, $smsService);
+
+    $user = User::factory()->create([
+        'email' => 'phone-reset@example.com',
+        'phone' => '+256703283529',
+        'password' => Hash::make('Password123'),
+    ]);
+    $user->assignRole(RoleName::User->value);
+
+    $forgotResponse = $this->postJson('/api/v1/auth/password/forgot', [
+        'app_type' => 'customer',
+        'phone' => '0703283529',
+    ]);
+
+    $forgotResponse
+        ->assertStatus(202)
+        ->assertJson([
+            'phone' => '+256703283529',
+            'email' => null,
+        ]);
+
+    $verifyResponse = $this->postJson('/api/v1/auth/password/verify', [
+        'app_type' => 'customer',
+        'phone' => $forgotResponse->json('phone'),
+        'otp_token' => $forgotResponse->json('otp_token'),
+        'code' => $codes[0],
+    ]);
+
+    $verifyResponse
+        ->assertSuccessful()
+        ->assertJson([
+            'phone' => '+256703283529',
+            'email' => null,
+        ]);
+
+    $resetResponse = $this->postJson('/api/v1/auth/password/reset', [
+        'app_type' => 'customer',
+        'phone' => $verifyResponse->json('phone'),
+        'reset_token' => $verifyResponse->json('reset_token'),
+        'password' => 'Password456',
+        'password_confirmation' => 'Password456',
+    ]);
+
+    $resetResponse->assertSuccessful();
+
+    expect(Hash::check('Password456', $user->refresh()->password))->toBeTrue();
+    expect($user->phone_verified_at)->not->toBeNull();
+});
+
+it('sends password reset verification to email when email is chosen', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    Notification::fake();
+
+    $smsService = new class extends SmsService
+    {
+        public int $sendCount = 0;
+
+        public function send(string $to, string $message): void
+        {
+            $this->sendCount++;
+        }
+    };
+    $this->app->instance(SmsService::class, $smsService);
+
+    $user = User::factory()->create([
+        'email' => 'email-reset@example.com',
+        'phone' => '+256703283529',
+        'password' => Hash::make('Password123'),
+    ]);
+    $user->assignRole(RoleName::User->value);
+
+    $response = $this->postJson('/api/v1/auth/password/forgot', [
+        'app_type' => 'customer',
+        'email' => 'email-reset@example.com',
+    ]);
+
+    $response
+        ->assertStatus(202)
+        ->assertJson([
+            'email' => 'email-reset@example.com',
+            'phone' => null,
+        ]);
+
+    Notification::assertSentTo($user, EmailOtpNotification::class);
+    expect($smsService->sendCount)->toBe(0);
 });

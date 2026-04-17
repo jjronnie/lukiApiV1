@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Api\V1\Order;
 
+use App\Enums\PaymentMethod;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreOrderRequest extends FormRequest
@@ -18,6 +20,10 @@ class StoreOrderRequest extends FormRequest
      */
     public function rules(): array
     {
+        $userDefaultPaymentMethod = $this->user()?->default_payment_method?->value
+            ?? $this->user()?->default_payment_method;
+        $paymentMethods = array_map(static fn (PaymentMethod $method): string => $method->value, PaymentMethod::cases());
+
         return [
             'service_public_id' => ['required', 'string', 'exists:services,public_id'],
             'service_tier_public_id' => ['required', 'string', 'exists:service_tiers,public_id'],
@@ -29,7 +35,13 @@ class StoreOrderRequest extends FormRequest
             'location_lat' => ['required', 'numeric', 'between:-90,90'],
             'location_lng' => ['required', 'numeric', 'between:-180,180'],
             'place_id' => ['nullable', 'string', 'max:120'],
-            'payment_method' => ['required', 'string', 'in:cash,card,mtn,airtel'],
+            'payment_method' => [
+                'nullable',
+                Rule::requiredIf(blank($userDefaultPaymentMethod)),
+                'string',
+                Rule::in($paymentMethods),
+            ],
+            'set_as_default_payment_method' => ['nullable', 'boolean'],
             'distance_km' => ['nullable', 'numeric', 'min:0'],
             'service_minutes' => ['nullable', 'integer', 'min:1'],
             'promo_code' => ['nullable', 'string', 'max:40'],
@@ -72,5 +84,15 @@ class StoreOrderRequest extends FormRequest
                 $validator->errors()->add('scheduled_at', 'Scheduled bookings must be between 7:00 AM and 6:00 PM.');
             }
         });
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'payment_method.required' => 'Choose a payment method before continuing.',
+        ];
     }
 }

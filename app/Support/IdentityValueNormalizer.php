@@ -61,6 +61,14 @@ class IdentityValueNormalizer
     {
         $raw = trim((string) $value);
 
+        if (preg_match('/^\+256\d{9}$/', $raw) === 1) {
+            return $raw;
+        }
+
+        if (preg_match('/^256\d{9}$/', $raw) === 1) {
+            return '+'.$raw;
+        }
+
         if (preg_match('/^\d{9}$/', $raw) === 1) {
             return $countryCode.$raw;
         }

@@ -22,6 +22,7 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'phone_country_code' => $this->phone_country_code,
             'phone_local_number' => $this->phone_local_number,
+            'default_payment_method' => $this->default_payment_method?->value ?? $this->default_payment_method,
             'email_verified_at' => $this->email_verified_at,
             'phone_verified_at' => $this->phone_verified_at,
             'profile_completed_at' => $this->profile_completed_at,

@@ -32,14 +32,15 @@ class CustomerProfileController extends Controller
             'first_name' => $nextFirstName !== '' ? $nextFirstName : $user->first_name,
             'last_name' => $nextLastName !== '' ? $nextLastName : $user->last_name,
             'name' => $nextName !== '' ? $nextName : $user->name,
-            'phone' => $data['phone'],
-            'phone_country_code' => $data['phone_country_code'],
-            'phone_local_number' => $data['phone_local_number'],
+            'phone' => $data['phone'] ?? $user->phone,
+            'phone_country_code' => $data['phone_country_code'] ?? $user->phone_country_code,
+            'phone_local_number' => $data['phone_local_number'] ?? $user->phone_local_number,
+            'default_payment_method' => $data['default_payment_method'] ?? $user->default_payment_method,
             'profile_completed_at' => now(),
         ]);
 
         return response()->json([
-            'message' => 'Profile completed successfully.',
+            'message' => 'Profile updated successfully.',
             'user' => new UserResource($user->load([
                 'roles',
                 'identityVerification',

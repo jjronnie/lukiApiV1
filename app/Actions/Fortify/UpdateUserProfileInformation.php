@@ -27,9 +27,17 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 'max:255',
                 Rule::unique('users')->ignore($user->id),
             ],
+
+            'phone' => ['nullable', 'string', 'max:20'],
         ])->validateWithBag('updateProfileInformation');
 
-        if ($input['email'] !== $user->email &&
+        if (isset($input['phone'])) {
+            $user->forceFill([
+                'name' => $input['name'],
+                'email' => $input['email'],
+                'phone' => $input['phone'] !== '' ? $input['phone'] : null,
+            ])->save();
+        } elseif ($input['email'] !== $user->email &&
             $user instanceof MustVerifyEmail) {
             $this->updateVerifiedUser($user, $input);
         } else {
