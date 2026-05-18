@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Documentation - Luki API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>.sidebar-right{position:sticky;top:0;max-height:calc(100vh - 4rem);overflow-y:auto}</style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <header class="bg-slate-900 text-white border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-cube text-blue-400 text-lg"></i>
+                <a href="index.html" class="font-bold text-lg">Luki Application</a>
+            </div>
+            <nav class="hidden md:flex items-center gap-6 text-sm">
+                <a href="../api/index.html" class="text-slate-300 hover:text-white">API</a>
+                <a href="index.html" class="text-white">Application</a>
+                <a href="https://laravel.com" target="_blank" class="text-slate-400 hover:text-white">Laravel</a>
+            </nav>
+        </div>
+    </header>
+    <div class="max-w-7xl mx-auto flex">
+        <aside class="w-64 hidden lg:block flex-shrink-0 py-8 pr-4 border-r border-gray-200">
+            <nav class="space-y-8">
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Getting Started</h3>
+                    <ul class="space-y-1">
+                        <li><a href="index.html" class="block px-3 py-1.5 rounded text-sm bg-blue-50 text-blue-700 font-medium">Introduction</a></li>
+                        <li><a href="architecture.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Architecture</a></li>
+                    </ul>
+                </div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Core</h3>
+                    <ul class="space-y-1">
+                        <li><a href="models.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Models</a></li>
+                        <li><a href="services.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Services</a></li>
+                        <li><a href="enums.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Enums</a></li>
+                    </ul>
+                </div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Data</h3>
+                    <ul class="space-y-1">
+                        <li><a href="database.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Database</a></li>
+                        <li><a href="migrations.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Migrations</a></li>
+                    </ul>
+                </div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">API</h3>
+                    <ul class="space-y-1">
+                        <li><a href="controllers.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Controllers</a></li>
+                        <li><a href="requests.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Requests</a></li>
+                        <li><a href="resources.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Resources</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        <main class="flex-1 py-8 px-8 lg:px-12">
+            <div class="max-w-3xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">Introduction</h1>
+                <p class="text-lg text-gray-600 mb-8">Luki Application codebase documentation.</p>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="overview">
+                    <h2 class="text-xl font-semibold mb-4">Overview</h2>
+                    <p class="text-gray-600 mb-4">Luki is a Laravel 13 application with REST API for a service marketplace.</p>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><strong>PHP:</strong> 8.4</li>
+                        <li><strong>Laravel:</strong> 13</li>
+                        <li><strong>Sanctum:</strong> Token-based auth</li>
+                    </ul>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="folders">
+                    <h2 class="text-xl font-semibold mb-4">Directory Structure</h2>
+                    <table class="w-full text-sm">
+                        <thead><tr class="border-b"><th class="text-left py-2 font-medium">Folder</th><th class="text-left py-2 font-medium">Purpose</th></tr></thead>
+                        <tbody>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">app/Models</code></td><td class="py-2 text-gray-600">Eloquent models</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">app/Services</code></td><td class="py-2 text-gray-600">Business logic</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">app/Http/Controllers</code></td><td class="py-2 text-gray-600">API Controllers</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">app/Http/Requests</code></td><td class="py-2 text-gray-600">Form requests</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">app/Http/Resources</code></td><td class="py-2 text-gray-600">API Resources</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">app/Enums</code></td><td class="py-2 text-gray-600">Enum constants</td></tr>
+                            <tr><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">database/migrations</code></td><td class="py-2 text-gray-600">Database schema</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="tech-stack">
+                    <h2 class="text-xl font-semibold mb-4">Tech Stack</h2>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Laravel 13</strong> - Framework</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Sanctum</strong> - API Authentication</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Fortify</strong> - Authentication actions</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Spatie Permissions</strong> - Role management</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Media Library</strong> - File uploads</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Query Builder</strong> - API filtering</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Pest</strong> - Testing</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>TailwindCSS 4</strong> - Frontend</li>
+                    </ul>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6" id="flow">
+                    <h2 class="text-xl font-semibold mb-4">Request Flow</h2>
+                    <div class="bg-slate-900 text-gray-100 p-4 rounded-lg text-sm">
+                        <pre><code>Request → FormRequest (validation) → Controller → Service → Model → Response (Resource)</code></pre>
+                    </div>
+                    <ol class="mt-4 space-y-2 text-gray-600">
+                        <li>1. <strong>FormRequest</strong> validates input</li>
+                        <li>2. <strong>Controller</strong> receives validated data</li>
+                        <li>3. <strong>Service</strong> contains business logic</li>
+                        <li>4. <strong>Model</strong> interacts with database</li>
+                        <li>5. <strong>Resource</strong> transforms to JSON</li>
+                    </ol>
+                </section>
+            </div>
+        </main>
+        <aside class="w-56 hidden lg:block flex-shrink-0 py-8 pl-4">
+            <nav class="sidebar-right space-y-1">
+                <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">On This Page</h4>
+                <ul class="space-y-1 text-sm">
+                    <li><a href="#overview" class="block py-1 text-gray-600 hover:text-gray-900">Overview</a></li>
+                    <li><a href="#folders" class="block py-1 text-gray-600 hover:text-gray-900">Directory Structure</a></li>
+                    <li><a href="#tech-stack" class="block py-1 text-gray-600 hover:text-gray-900">Tech Stack</a></li>
+                    <li><a href="#flow" class="block py-1 text-gray-600 hover:text-gray-900">Request Flow</a></li>
+                </ul>
+            </nav>
+        </aside>
+    </div>
+</body>
+</html>

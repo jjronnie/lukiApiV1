@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enums - Luki Application</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>.sidebar-right{position:sticky;top:0;max-height:calc(100vh - 4rem);overflow-y:auto}</style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <header class="bg-slate-900 text-white border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between"><div class="flex items-center gap-3"><i class="fas fa-cube text-blue-400 text-lg"></i><a href="index.html" class="font-bold text-lg">Luki Application</a></div><nav class="hidden md:flex items-center gap-6 text-sm"><a href="../api/index.html" class="text-slate-300 hover:text-white">API</a><a href="index.html" class="text-white">Application</a></nav></div>
+    </header>
+    <div class="max-w-7xl mx-auto flex">
+        <aside class="w-64 hidden lg:block flex-shrink-0 py-8 pr-4 border-r border-gray-200">
+            <nav class="space-y-8">
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Getting Started</h3><ul class="space-y-1"><li><a href="index.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Introduction</a></li><li><a href="architecture.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Architecture</a></li></ul></div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Core</h3><ul class="space-y-1"><li><a href="models.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Models</a></li><li><a href="services.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Services</a></li><li><a href="enums.html" class="block px-3 py-1.5 rounded text-sm bg-blue-50 text-blue-700 font-medium">Enums</a></li></ul></div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Data</h3><ul class="space-y-1"><li><a href="database.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Database</a></li><li><a href="migrations.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Migrations</a></li></ul></div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">API</h3><ul class="space-y-1"><li><a href="controllers.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Controllers</a></li><li><a href="requests.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Requests</a></li><li><a href="resources.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Resources</a></li></ul></div>
+            </nav>
+        </aside>
+        <main class="flex-1 py-8 px-8 lg:px-12">
+            <div class="max-w-3xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">Enums</h1>
+                <p class="text-lg text-gray-600 mb-8">Constants in <code class="bg-gray-100 px-1 rounded">app/Enums</code></p>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="order-status">
+                    <h2 class="text-xl font-semibold mb-4">OrderStatus</h2>
+                    <div class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs mb-4"><code>App\Enums\OrderStatus</code></div>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">pending</code> - Awaiting provider</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">accepted</code> - Provider accepted</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">enRoute</code> / <code class="bg-gray-100 px-1 rounded text-xs">onTheWay</code> - Traveling</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">arrived</code> - At location</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">inProgress</code> - Service underway</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">completed</code> - Done</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">cancelled</code> - Cancelled</li>
+                    </ul>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="payment-method">
+                    <h2 class="text-xl font-semibold mb-4">PaymentMethod</h2>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">cash</code></li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">mobileMoney</code></li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">card</code></li>
+                    </ul>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="booking-mode">
+                    <h2 class="text-xl font-semibold mb-4">OrderBookingMode</h2>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">normal</code> - Regular booking</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">pair</code> - Pair with specific provider</li>
+                    </ul>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="verification">
+                    <h2 class="text-xl font-semibold mb-4">VerificationStatus</h2>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">pending</code></li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">submitted</code></li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">approved</code></li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">rejected</code></li>
+                    </ul>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6" id="role">
+                    <h2 class="text-xl font-semibold mb-4">RoleName</h2>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">customer</code></li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">provider</code></li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">admin</code></li>
+                    </ul>
+                </section>
+            </div>
+        </main>
+        <aside class="w-56 hidden lg:block flex-shrink-0 py-8 pl-4">
+            <nav class="sidebar-right space-y-1"><h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">On This Page</h4><ul class="space-y-1 text-sm"><li><a href="#order-status" class="block py-1 text-gray-600 hover:text-gray-900">OrderStatus</a></li><li><a href="#payment-method" class="block py-1 text-gray-600 hover:text-gray-900">PaymentMethod</a></li></ul></nav>
+        </aside>
+    </div>
+</body>
+</html>

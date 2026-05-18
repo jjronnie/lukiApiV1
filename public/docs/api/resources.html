@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Resources - Luki API Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>.sidebar-right{position:sticky;top:0;max-height:calc(100vh - 4rem);overflow-y:auto}</style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <header class="bg-slate-900 text-white border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between"><div class="flex items-center gap-3"><i class="fas fa-plug text-blue-400 text-lg"></i><a href="index.html" class="font-bold text-lg">Luki API</a><span class="bg-blue-600 px-2 py-0.5 rounded text-xs">v1</span></div><nav class="hidden md:flex items-center gap-6 text-sm"><a href="index.html" class="text-slate-400 hover:text-white">Docs</a><a href="https://laravel.com" target="_blank" class="text-slate-400 hover:text-white">Laravel.com</a></nav></div>
+    </header>
+    <div class="max-w-7xl mx-auto flex">
+        <aside class="w-64 hidden lg:block flex-shrink-0 py-8 pr-4 border-r border-gray-200">
+            <nav class="space-y-8">
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Getting Started</h3><ul class="space-y-1"><li><a href="index.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Introduction</a></li><li><a href="authentication.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Authentication</a></li><li><a href="errors.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Errors & Responses</a></li></ul></div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">API Reference</h3><ul class="space-y-1"><li><a href="auth.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Authentication</a></li><li><a href="catalog.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Service Catalog</a></li><li><a href="orders.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Orders</a></li><li><a href="provider.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Provider</a></li><li><a href="user.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Customer Profile</a></li><li><a href="notifications.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Notifications</a></li><li><a href="pricing.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Pricing</a></li></ul></div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Resources</h3><ul class="space-y-1"><li><a href="resources.html" class="block px-3 py-1.5 rounded text-sm bg-blue-50 text-blue-700 font-medium">API Resources</a></li></ul></div>
+            </nav>
+        </aside>
+        <main class="flex-1 py-8 px-8 lg:px-12">
+            <div class="max-w-3xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">API Resources</h1>
+                <p class="text-lg text-gray-600 mb-8">Response data models and structures.</p>
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="user">
+                    <h2 class="text-lg font-semibold mb-4">UserResource</h2>
+                    <p class="text-gray-600 mb-4">Represents a user.</p>
+                    <table class="w-full text-sm"><thead><tr class="border-b"><th class="text-left py-2 font-medium">Field</th><th class="text-left py-2 font-medium">Type</th><th class="text-left py-2 font-medium">Description</th></tr></thead><tbody><tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">public_id</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Unique ID</td></tr><tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">first_name</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">First name</td></tr><tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">last_name</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Last name</td></tr><tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">email</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Email</td></tr><tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">phone</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Phone (E.164)</td></tr><tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">role</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">customer/provider</td></tr><tr><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">avatar_url</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Avatar URL</td></tr></tbody></table>
+                </section>
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="order">
+                    <h2 class="text-lg font-semibold mb-4">OrderResource</h2>
+                    <p class="text-gray-600 mb-4">Represents an order.</p>
+                    <table class="w-full text-sm"><thead><tr class="border-b"><th class="text-left py-2 font-medium">Field</th><th class="text-left py-2 font-medium">Type</th><th class="text-left py-2 font-medium">Description</th></tr></thead><tbody><tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">public_id</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Unique ID</td></tr><tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">status</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">pending/accepted/in_progress/completed/cancelled</td></tr><tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">service</code></td><td class="py-2 text-xs">object</td><td class="py-2 text-gray-600">Service details</td></tr><tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">provider</code></td><td class="py-2 text-xs">object</td><td class="py-2 text-gray-600">Assigned provider</td></tr><tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">price</code></td><td class="py-2 text-xs">object</td><td class="py-2 text-gray-600">Pricing</td></tr><tr><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">scheduled_at</code></td><td class="py-2 text-xs">datetime</td><td class="py-2 text-gray-600">Scheduled time</td></tr></tbody></table>
+                </section>
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="service">
+                    <h2 class="text-lg font-semibold mb-4">ServiceResource</h2>
+                    <p class="text-gray-600">Represents a service.</p>
+                </section>
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="category">
+                    <h2 class="text-lg font-semibold mb-4">ServiceCategoryResource</h2>
+                    <p class="text-gray-600">Represents a category.</p>
+                </section>
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="tier">
+                    <h2 class="text-lg font-semibold mb-4">ServiceTierResource</h2>
+                    <p class="text-gray-600">Represents a pricing tier.</p>
+                </section>
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="offer">
+                    <h2 class="text-lg font-semibold mb-4">ProviderOfferResource</h2>
+                    <p class="text-gray-600">Represents an offer.</p>
+                </section>
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="notification">
+                    <h2 class="text-lg font-semibold mb-4">NotificationRecordResource</h2>
+                    <p class="text-gray-600">Represents a notification.</p>
+                </section>
+                <section class="bg-white rounded-xl shadow-sm border p-6" id="advert">
+                    <h2 class="text-lg font-semibold mb-4">HomeAdvertResource</h2>
+                    <p class="text-gray-600">Represents an advert.</p>
+                </section>
+            </div>
+        </main>
+        <aside class="w-56 hidden lg:block flex-shrink-0 py-8 pl-4">
+            <nav class="sidebar-right space-y-1"><h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">On This Page</h4><ul class="space-y-1 text-sm"><li><a href="#user" class="block py-1 text-gray-600 hover:text-gray-900">User</a></li><li><a href="#order" class="block py-1 text-gray-600 hover:text-gray-900">Order</a></li><li><a href="#service" class="block py-1 text-gray-600 hover:text-gray-900">Service</a></li><li><a href="#category" class="block py-1 text-gray-600 hover:text-gray-900">Category</a></li><li><a href="#tier" class="block py-1 text-gray-600 hover:text-gray-900">Tier</a></li><li><a href="#offer" class="block py-1 text-gray-600 hover:text-gray-900">Offer</a></li><li><a href="#notification" class="block py-1 text-gray-600 hover:text-gray-900">Notification</a></li><li><a href="#advert" class="block py-1 text-gray-600 hover:text-gray-900">Advert</a></li></ul></nav>
+        </aside>
+    </div>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Endpoints - Luki API Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>.sidebar-right{position:sticky;top:0;max-height:calc(100vh - 4rem);overflow-y:auto}</style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <header class="bg-slate-900 text-white border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-plug text-blue-400 text-lg"></i>
+                <a href="index.html" class="font-bold text-lg">Luki API</a>
+                <span class="bg-blue-600 px-2 py-0.5 rounded text-xs">v1</span>
+            </div>
+            <nav class="hidden md:flex items-center gap-6 text-sm">
+                <a href="index.html" class="text-slate-400 hover:text-white">Docs</a>
+                <a href="https://laravel.com" target="_blank" class="text-slate-400 hover:text-white">Laravel.com</a>
+            </nav>
+        </div>
+    </header>
+    <div class="max-w-7xl mx-auto flex">
+        <aside class="w-64 hidden lg:block flex-shrink-0 py-8 pr-4 border-r border-gray-200">
+            <nav class="space-y-8">
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Getting Started</h3>
+                    <ul class="space-y-1">
+                        <li><a href="index.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Introduction</a></li>
+                        <li><a href="authentication.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Authentication</a></li>
+                        <li><a href="errors.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Errors & Responses</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">API Reference</h3>
+                    <ul class="space-y-1">
+                        <li><a href="auth.html" class="block px-3 py-1.5 rounded text-sm bg-blue-50 text-blue-700 font-medium">Authentication</a></li>
+                        <li><a href="catalog.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Service Catalog</a></li>
+                        <li><a href="orders.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Orders</a></li>
+                        <li><a href="provider.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Provider</a></li>
+                        <li><a href="user.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Customer Profile</a></li>
+                        <li><a href="notifications.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Notifications</a></li>
+                        <li><a href="pricing.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Pricing</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Resources</h3>
+                    <ul class="space-y-1">
+                        <li><a href="resources.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">API Resources</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        <main class="flex-1 py-8 px-8 lg:px-12">
+            <div class="max-w-3xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">Authentication Endpoints</h1>
+                <p class="text-lg text-gray-600 mb-8">Register, login, password reset, and token management.</p>
+
+                <!-- Public Endpoints -->
+                <div class="mb-8">
+                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">Public</span>
+                </div>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="register">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/register</h2>
+                    </div>
+                    <p class="text-gray-600 mb-4">Register a new user account. Sends OTP for verification.</p>
+                    <h4 class="font-medium mb-2">Request Body</h4>
+                    <table class="w-full text-sm mb-4">
+                        <thead><tr class="border-b"><th class="text-left py-2 font-medium w-1/4">Field</th><th class="text-left py-2 font-medium w-1/4">Type</th><th class="text-left py-2 font-medium">Description</th></tr></thead>
+                        <tbody>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">app_type</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">customer or provider</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">first_name</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">First name (2-60 chars)</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">last_name</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Last name (2-60 chars)</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">email</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Email (if no phone)</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">phone</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">+256xxxxxxxxx (if no email)</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">password</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Min 8 chars, letters + numbers</td></tr>
+                            <tr><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">password_confirmation</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Must match password</td></tr>
+                        </tbody>
+                    </table>
+                    <pre class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs overflow-x-auto"><code>{
+  "app_type": "customer",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john@example.com",
+  "password": "password123",
+  "password_confirmation": "password123"
+}</code></pre>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="register-verify">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/register/verify</h2>
+                    </div>
+                    <p class="text-gray-600 mb-4">Verify account with OTP. Returns access token.</p>
+                    <h4 class="font-medium mb-2">Request Body</h4>
+                    <table class="w-full text-sm mb-4">
+                        <thead><tr class="border-b"><th class="text-left py-2 font-medium">Field</th><th class="text-left py-2 font-medium">Type</th><th class="text-left py-2 font-medium">Required</th></tr></thead>
+                        <tbody>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">app_type</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-red-600">Yes</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">email</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Conditional</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">phone</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Conditional</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">otp_token</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-red-600">Yes</td></tr>
+                            <tr><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">code</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-red-600">Yes</td></tr>
+                        </tbody>
+                    </table>
+                    <pre class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs overflow-x-auto"><code>{
+  "message": "Account verified",
+  "data": {
+    "user": { "public_id": "usr_...", "first_name": "John" },
+    "access_token": "eyJp...",
+    "refresh_token": "eyJp..."
+  }
+}</code></pre>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="login">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/login</h2>
+                    </div>
+                    <p class="text-gray-600 mb-4">Login with email/phone and password. Sends OTP.</p>
+                    <h4 class="font-medium mb-2">Request Body</h4>
+                    <table class="w-full text-sm mb-4">
+                        <thead><tr class="border-b"><th class="text-left py-2 font-medium">Field</th><th class="text-left py-2 font-medium">Type</th><th class="text-left py-2 font-medium">Required</th></tr></thead>
+                        <tbody>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">app_type</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-red-600">Yes</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">email</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Conditional</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">phone</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Conditional</td></tr>
+                            <tr><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">password</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-red-600">Yes</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="login-verify">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/login/verify</h2>
+                    </div>
+                    <p class="text-gray-600 mb-4">Verify login with OTP and receive access token.</p>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="resend-otp">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/otp/resend</h2>
+                    </div>
+                    <p class="text-gray-600 mb-4">Resend the OTP code.</p>
+                    <h4 class="font-medium mb-2">Request Body</h4>
+                    <table class="w-full text-sm">
+                        <thead><tr class="border-b"><th class="text-left py-2 font-medium">Field</th><th class="text-left py-2 font-medium">Type</th><th class="text-left py-2 font-medium">Required</th></tr></thead>
+                        <tbody>
+                            <tr><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">otp_token</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-red-600">Yes</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="refresh">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/refresh</h2>
+                    </div>
+                    <p class="text-gray-600">Get a new access token using refresh token.</p>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="google">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/google</h2>
+                    </div>
+                    <p class="text-gray-600 mb-4">Login/register with Google Sign-In.</p>
+                    <h4 class="font-medium mb-2">Request Body</h4>
+                    <table class="w-full text-sm">
+                        <thead><tr class="border-b"><th class="text-left py-2 font-medium">Field</th><th class="text-left py-2 font-medium">Type</th><th class="text-left py-2 font-medium">Required</th></tr></thead>
+                        <tbody>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">app_type</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-red-600">Yes</td></tr>
+                            <tr><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">id_token</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-red-600">Yes</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Password Reset -->
+                <div class="mb-8 mt-12">
+                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">Password Reset</span>
+                </div>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="password-forgot">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/password/forgot</h2>
+                    </div>
+                    <p class="text-gray-600">Initiate password reset.</p>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="password-verify">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/password/verify</h2>
+                    </div>
+                    <p class="text-gray-600">Verify reset OTP.</p>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="password-reset">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/password/reset</h2>
+                    </div>
+                    <p class="text-gray-600">Reset password after OTP verification.</p>
+                </section>
+
+                <!-- Protected -->
+                <div class="mb-8 mt-12">
+                    <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">Protected</span>
+                </div>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="me">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold">GET</span>
+                        <h2 class="text-lg font-semibold">/auth/me</h2>
+                    </div>
+                    <p class="text-gray-600">Get current authenticated user.</p>
+                    <pre class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs overflow-x-auto mt-4"><code>{
+  "data": {
+    "public_id": "usr_...",
+    "first_name": "John",
+    "email": "john@example.com",
+    "role": "customer"
+  }
+}</code></pre>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="logout">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/logout</h2>
+                    </div>
+                    <p class="text-gray-600">Revoke current access token.</p>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="password-change">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/password/change</h2>
+                    </div>
+                    <p class="text-gray-600">Change password while logged in.</p>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6" id="email-verify">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <h2 class="text-lg font-semibold">/auth/email/verify/send</h2>
+                    </div>
+                    <p class="text-gray-600">Resend verification email.</p>
+                </section>
+            </div>
+        </main>
+        <aside class="w-56 hidden lg:block flex-shrink-0 py-8 pl-4">
+            <nav class="sidebar-right space-y-1">
+                <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">On This Page</h4>
+                <ul class="space-y-1 text-sm">
+                    <li><a href="#register" class="block py-1 text-gray-600 hover:text-gray-900">Register</a></li>
+                    <li><a href="#register-verify" class="block py-1 text-gray-600 hover:text-gray-900">Verify Email</a></li>
+                    <li><a href="#login" class="block py-1 text-gray-600 hover:text-gray-900">Login</a></li>
+                    <li><a href="#login-verify" class="block py-1 text-gray-600 hover:text-gray-900">Verify Login</a></li>
+                    <li><a href="#resend-otp" class="block py-1 text-gray-600 hover:text-gray-900">Resend OTP</a></li>
+                    <li><a href="#refresh" class="block py-1 text-gray-600 hover:text-gray-900">Refresh Token</a></li>
+                    <li><a href="#google" class="block py-1 text-gray-600 hover:text-gray-900">Google Login</a></li>
+                    <li><a href="#password-forgot" class="block py-1 text-gray-600 hover:text-gray-900">Forgot Password</a></li>
+                    <li><a href="#password-reset" class="block py-1 text-gray-600 hover:text-gray-900">Reset Password</a></li>
+                    <li><a href="#me" class="block py-1 text-gray-600 hover:text-gray-900">Get Current User</a></li>
+                    <li><a href="#logout" class="block py-1 text-gray-600 hover:text-gray-900">Logout</a></li>
+                    <li><a href="#password-change" class="block py-1 text-gray-600 hover:text-gray-900">Change Password</a></li>
+                </ul>
+            </nav>
+        </aside>
+    </div>
+</body>
+</html>

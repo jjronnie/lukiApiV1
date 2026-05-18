@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture - Luki Application</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>.sidebar-right{position:sticky;top:0;max-height:calc(100vh - 4rem);overflow-y:auto}</style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <header class="bg-slate-900 text-white border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3"><i class="fas fa-cube text-blue-400 text-lg"></i><a href="index.html" class="font-bold text-lg">Luki Application</a></div>
+            <nav class="hidden md:flex items-center gap-6 text-sm"><a href="../api/index.html" class="text-slate-300 hover:text-white">API</a><a href="index.html" class="text-white">Application</a></nav>
+        </div>
+    </header>
+    <div class="max-w-7xl mx-auto flex">
+        <aside class="w-64 hidden lg:block flex-shrink-0 py-8 pr-4 border-r border-gray-200">
+            <nav class="space-y-8">
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Getting Started</h3><ul class="space-y-1"><li><a href="index.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Introduction</a></li><li><a href="architecture.html" class="block px-3 py-1.5 rounded text-sm bg-blue-50 text-blue-700 font-medium">Architecture</a></li></ul></div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Core</h3><ul class="space-y-1"><li><a href="models.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Models</a></li><li><a href="services.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Services</a></li><li><a href="enums.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Enums</a></li></ul></div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Data</h3><ul class="space-y-1"><li><a href="database.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Database</a></li><li><a href="migrations.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Migrations</a></li></ul></div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">API</h3><ul class="space-y-1"><li><a href="controllers.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Controllers</a></li><li><a href="requests.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Requests</a></li><li><a href="resources.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Resources</a></li></ul></div>
+            </nav>
+        </aside>
+        <main class="flex-1 py-8 px-8 lg:px-12">
+            <div class="max-w-3xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">Architecture</h1>
+                <p class="text-lg text-gray-600 mb-8">Application architecture and design patterns.</p>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="layers">
+                    <h2 class="text-xl font-semibold mb-4">Layer Architecture</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                            <div><strong>HTTP Layer</strong><p class="text-sm text-gray-500">Controllers, Requests, Resources</p></div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">2</div>
+                            <div><strong>Service Layer</strong><p class="text-sm text-gray-500">Business logic in app/Services</p></div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold">3</div>
+                            <div><strong>Model/Repository</strong><p class="text-sm text-gray-500">Eloquent models, database interaction</p></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="patterns">
+                    <h2 class="text-xl font-semibold mb-4">Design Patterns Used</h2>
+                    <ul class="space-y-3 text-gray-600">
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Service Repository</strong> - Services encapsulate business logic</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Form Request</strong> - Validation in separate classes</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>API Resources</strong> - Transform models to JSON</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Traits</strong> - Reusable model behavior (HasPublicId)</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Enums</strong> - Type-safe constants</li>
+                    </ul>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="naming">
+                    <h2 class="text-xl font-semibold mb-4">Naming Conventions</h2>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><strong>Models:</strong> Singular, PascalCase (<code class="bg-gray-100 px-1 rounded text-xs">Order.php</code>)</li>
+                        <li><strong>Tables:</strong> Plural, snake_case (<code class="bg-gray-100 px-1 rounded text-xs">orders</code>)</li>
+                        <li><strong>Public IDs:</strong> Prefix + underscore + random (<code class="bg-gray-100 px-1 rounded text-xs">usr_abc123</code>)</li>
+                        <li><strong>Services:</strong> Singular, suffixed with Service</li>
+                        <li><strong>Enums:</strong> Descriptive, suffixed with Status/Type/Mode</li>
+                    </ul>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6" id="code-location">
+                    <h2 class="text-xl font-semibold mb-4">Where to Find Things</h2>
+                    <table class="w-full text-sm">
+                        <thead><tr class="border-b"><th class="text-left py-2 font-medium">Need to...</th><th class="text-left py-2 font-medium">Look in...</th></tr></thead>
+                        <tbody>
+                            <tr class="border-b"><td class="py-2">Add new API endpoint</td><td class="py-2 text-gray-600">routes/api.php</td></tr>
+                            <tr class="border-b"><td class="py-2">Handle request validation</td><td class="py-2 text-gray-600">app/Http/Requests/Api/V1/</td></tr>
+                            <tr class="border-b"><td class="py-2">Add business logic</td><td class="py-2 text-gray-600">app/Services/</td></tr>
+                            <tr class="border-b"><td class="py-2">Add new database table</td><td class="py-2 text-gray-600">database/migrations/</td></tr>
+                            <tr class="border-b"><td class="py-2">Add new status/type</td><td class="py-2 text-gray-600">app/Enums/</td></tr>
+                            <tr class="border-b"><td class="py-2">Change API response format</td><td class="py-2 text-gray-600">app/Http/Resources/</td></tr>
+                            <tr class="border-b"><td class="py-2">Add authentication</td><td class="py-2 text-gray-600">app/Actions/Fortify/</td></tr>
+                            <tr><td class="py-2">Add background job</td><td class="py-2 text-gray-600">app/Jobs/</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+            </div>
+        </main>
+        <aside class="w-56 hidden lg:block flex-shrink-0 py-8 pl-4">
+            <nav class="sidebar-right space-y-1">
+                <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">On This Page</h4>
+                <ul class="space-y-1 text-sm">
+                    <li><a href="#layers" class="block py-1 text-gray-600 hover:text-gray-900">Layers</a></li>
+                    <li><a href="#patterns" class="block py-1 text-gray-600 hover:text-gray-900">Patterns</a></li>
+                    <li><a href="#naming" class="block py-1 text-gray-600 hover:text-gray-900">Naming</a></li>
+                    <li><a href="#code-location" class="block py-1 text-gray-600 hover:text-gray-900">Code Location</a></li>
+                </ul>
+            </nav>
+        </aside>
+    </div>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luki API v1 Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @media (min-width: 1024px) {
+            .sidebar-right { position: sticky; top: 0; max-height: calc(100vh - 4rem); overflow-y: auto; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- Header -->
+    <header class="bg-slate-900 text-white border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-plug text-blue-400 text-lg"></i>
+                <a href="index.html" class="font-bold text-lg">Luki API</a>
+                <span class="bg-blue-600 px-2 py-0.5 rounded text-xs">v1</span>
+            </div>
+            <nav class="hidden md:flex items-center gap-6 text-sm">
+                <a href="index.html" class="text-white">API</a>
+                <a href="../app/index.html" class="text-slate-300 hover:text-white">Application</a>
+                <a href="https://laravel.com" target="_blank" class="text-slate-400 hover:text-white">Laravel</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto flex">
+        <!-- Left Sidebar -->
+        <aside class="w-64 hidden lg:block flex-shrink-0 py-8 pr-4 border-r border-gray-200">
+            <nav class="space-y-8">
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Getting Started</h3>
+                    <ul class="space-y-1">
+                        <li><a href="index.html" class="block px-3 py-1.5 rounded text-sm bg-blue-50 text-blue-700 font-medium">Introduction</a></li>
+                        <li><a href="authentication.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition">Authentication</a></li>
+                        <li><a href="errors.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition">Errors & Responses</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">API Reference</h3>
+                    <ul class="space-y-1">
+                        <li><a href="auth.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition">Authentication</a></li>
+                        <li><a href="catalog.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition">Service Catalog</a></li>
+                        <li><a href="orders.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition">Orders</a></li>
+                        <li><a href="provider.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition">Provider</a></li>
+                        <li><a href="user.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition">Customer Profile</a></li>
+                        <li><a href="notifications.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition">Notifications</a></li>
+                        <li><a href="pricing.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition">Pricing</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Resources</h3>
+                    <ul class="space-y-1">
+                        <li><a href="resources.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition">API Resources</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 py-8 px-8 lg:px-12">
+            <div class="max-w-3xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">Introduction</h1>
+                <p class="text-lg text-gray-600 mb-8">The Luki API is a RESTful API for the Luki service marketplace.</p>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="overview">
+                    <h2 class="text-xl font-semibold mb-4">Overview</h2>
+                    <p class="text-gray-600">
+                        The API allows customers to book services and providers to manage their offerings. 
+                        All requests and responses use JSON format with standard HTTP methods.
+                    </p>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="base-url">
+                    <h2 class="text-xl font-semibold mb-4">Base URL</h2>
+                    <div class="bg-slate-900 rounded-lg p-4">
+                        <code class="text-green-400 text-sm">https://yourdomain.com/api/v1</code>
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="quick-start">
+                    <h2 class="text-xl font-semibold mb-4">Quick Start</h2>
+                    <div class="space-y-4">
+                        <div class="border-l-4 border-blue-500 pl-4">
+                            <h3 class="font-semibold mb-2">1. Register</h3>
+                            <pre class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs overflow-x-auto"><code>POST /auth/register
+{
+  "app_type": "customer",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john@example.com",
+  "password": "password123",
+  "password_confirmation": "password123"
+}</code></pre>
+                        </div>
+                        <div class="border-l-4 border-blue-500 pl-4">
+                            <h3 class="font-semibold mb-2">2. Verify OTP</h3>
+                            <pre class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs overflow-x-auto"><code>POST /auth/register/verify
+{
+  "email": "john@example.com",
+  "otp_token": "...",
+  "code": "123456"
+}</code></pre>
+                        </div>
+                        <div class="border-l-4 border-blue-500 pl-4">
+                            <h3 class="font-semibold mb-2">3. Login</h3>
+                            <pre class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs overflow-x-auto"><code>POST /auth/login
+{
+  "app_type": "customer",
+  "email": "john@example.com",
+  "password": "password123"
+}</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="headers">
+                    <h2 class="text-xl font-semibold mb-4">Request Headers</h2>
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left py-3 font-medium">Header</th>
+                                <th class="text-left py-3 font-medium">Value</th>
+                                <th class="text-left py-3 font-medium">Required</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b">
+                                <td class="py-3"><code class="bg-gray-100 px-2 py-0.5 rounded text-xs">Content-Type</code></td>
+                                <td class="py-3 text-blue-600">application/json</td>
+                                <td class="py-3 text-gray-500">Yes</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-3"><code class="bg-gray-100 px-2 py-0.5 rounded text-xs">Accept</code></td>
+                                <td class="py-3 text-blue-600">application/json</td>
+                                <td class="py-3 text-gray-500">Yes</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3"><code class="bg-gray-100 px-2 py-0.5 rounded text-xs">Authorization</code></td>
+                                <td class="py-3 text-blue-600">Bearer {token}</td>
+                                <td class="py-3 text-gray-500">Protected routes</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6" id="rate-limiting">
+                    <h2 class="text-xl font-semibold mb-4">Rate Limiting</h2>
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left py-3 font-medium">Endpoint</th>
+                                <th class="text-left py-3 font-medium">Limit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b">
+                                <td class="py-3">Auth endpoints</td>
+                                <td class="py-3">10/minute</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="py-3">General API</td>
+                                <td class="py-3">60/minute</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3">Verification sessions</td>
+                                <td class="py-3">5/hour</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </div>
+        </main>
+
+        <!-- Right Sidebar - On This Page -->
+        <aside class="w-56 hidden lg:block flex-shrink-0 py-8 pl-4">
+            <nav class="sidebar-right space-y-1" id="on-this-page">
+                <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">On This Page</h4>
+                <ul class="space-y-1 text-sm">
+                    <li><a href="#overview" class="block py-1 text-gray-600 hover:text-gray-900 transition">Overview</a></li>
+                    <li><a href="#base-url" class="block py-1 text-gray-600 hover:text-gray-900 transition">Base URL</a></li>
+                    <li><a href="#quick-start" class="block py-1 text-gray-600 hover:text-gray-900 transition">Quick Start</a></li>
+                    <li><a href="#headers" class="block py-1 text-gray-600 hover:text-gray-900 transition">Request Headers</a></li>
+                    <li><a href="#rate-limiting" class="block py-1 text-gray-600 hover:text-gray-900 transition">Rate Limiting</a></li>
+                </ul>
+            </nav>
+        </aside>
+    </div>
+</body>
+</html>

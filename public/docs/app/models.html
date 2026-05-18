@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Models - Luki Application</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>.sidebar-right{position:sticky;top:0;max-height:calc(100vh - 4rem);overflow-y:auto}</style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <header class="bg-slate-900 text-white border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-cube text-blue-400 text-lg"></i>
+                <a href="index.html" class="font-bold text-lg">Luki Application</a>
+            </div>
+            <nav class="hidden md:flex items-center gap-6 text-sm">
+                <a href="../api/index.html" class="text-slate-300 hover:text-white">API</a>
+                <a href="index.html" class="text-white">Application</a>
+            </nav>
+        </div>
+    </header>
+    <div class="max-w-7xl mx-auto flex">
+        <aside class="w-64 hidden lg:block flex-shrink-0 py-8 pr-4 border-r border-gray-200">
+<nav class="space-y-8">
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Getting Started</h3>
+                    <ul class="space-y-1">
+                        <li><a href="index.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Introduction</a></li>
+                        <li><a href="architecture.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Architecture</a></li>
+                    </ul>
+                </div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Core</h3>
+                    <ul class="space-y-1">
+                        <li><a href="models.html" class="block px-3 py-1.5 rounded text-sm bg-blue-50 text-blue-700 font-medium">Models</a></li>
+                        <li><a href="services.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Services</a></li>
+                        <li><a href="enums.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Enums</a></li>
+                    </ul>
+                </div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Data</h3>
+                    <ul class="space-y-1">
+                        <li><a href="database.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Database</a></li>
+                        <li><a href="migrations.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Migrations</a></li>
+                    </ul>
+                </div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">API</h3>
+                    <ul class="space-y-1">
+                        <li><a href="controllers.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Controllers</a></li>
+                        <li><a href="requests.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Requests</a></li>
+                        <li><a href="resources.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Resources</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        <main class="flex-1 py-8 px-8 lg:px-12">
+            <div class="max-w-3xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">Models</h1>
+                <p class="text-lg text-gray-600 mb-8">Eloquent models in <code class="bg-gray-100 px-1 rounded">app/Models</code></p>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="user">
+                    <h2 class="text-xl font-semibold mb-4">User</h2>
+                    <p class="text-gray-600 mb-4">Core user model - can be customer or provider based on roles.</p>
+                    <div class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs mb-4"><code>App\Models\User</code></div>
+                    <h4 class="font-medium mb-2">Key Fields</h4>
+                    <table class="w-full text-sm">
+                        <thead><tr class="border-b"><th class="text-left py-2 font-medium">Field</th><th class="text-left py-2 font-medium">Type</th><th class="text-left py-2 font-medium">Description</th></tr></thead>
+                        <tbody>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">first_name</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">First name</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">last_name</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Last name</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">email</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">Email (nullable)</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">phone</code></td><td class="py-2 text-xs">string</td><td class="py-2 text-gray-600">E.164 format (+256...)</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">default_payment_method</code></td><td class="py-2 text-xs">enum</td><td class="py-2 text-gray-600">cash/mobile_money/card</td></tr>
+                            <tr><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">is_blocked</code></td><td class="py-2 text-xs">boolean</td><td class="py-2 text-gray-600">Account blocked</td></tr>
+                        </tbody>
+                    </table>
+                    <h4 class="font-medium mt-4 mb-2">Relationships</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">orders()</code> - HasMany Order</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">providerProfile()</code> - HasOne ProviderProfile</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">wallet()</code> - HasOne Wallet</li>
+                    </ul>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="order">
+                    <h2 class="text-xl font-semibold mb-4">Order</h2>
+                    <p class="text-gray-600 mb-4">Service booking/order.</p>
+                    <div class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs mb-4"><code>App\Models\Order</code></div>
+                    <h4 class="font-medium mb-2">Key Fields</h4>
+                    <table class="w-full text-sm">
+                        <thead><tr class="border-b"><th class="text-left py-2 font-medium">Field</th><th class="text-left py-2 font-medium">Type</th><th class="text-left py-2 font-medium">Description</th></tr></thead>
+                        <tbody>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">status</code></td><td class="py-2 text-xs">enum</td><td class="py-2 text-gray-600">OrderStatus</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">booking_mode</code></td><td class="py-2 text-xs">enum</td><td class="py-2 text-gray-600">normal/pair</td></tr>
+                            <tr class="border-b"><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">total_amount</code></td><td class="py-2 text-xs">integer</td><td class="py-2 text-gray-600">UGX cents</td></tr>
+                            <tr><td class="py-2"><code class="bg-gray-100 px-1 rounded text-xs">payment_status</code></td><td class="py-2 text-xs">enum</td><td class="py-2 text-gray-600">pending/paid</td></tr>
+                        </tbody>
+                    </table>
+                    <h4 class="font-medium mt-4 mb-2">Status Timeline Fields</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">scheduled_at</code> - Scheduling</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">accepted_at</code> - Provider accepted</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">in_service_at</code> - Service started</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">completed_at</code> - Completed</li>
+                        <li><code class="bg-gray-100 px-1 rounded text-xs">cancelled_at</code> - Cancelled</li>
+                    </ul>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="service">
+                    <h2 class="text-xl font-semibold mb-4">Service</h2>
+                    <p class="text-gray-600">Service offering (e.g., Home Cleaning).</p>
+                    <div class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs"><code>App\Models\Service</code></div>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="provider">
+                    <h2 class="text-xl font-semibold mb-4">ProviderProfile</h2>
+                    <p class="text-gray-600">Provider business details.</p>
+                    <div class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs"><code>App\Models\ProviderProfile</code></div>
+                </section>
+
+                <section class="bg-white rounded-xl shadow-sm border p-6" id="wallet">
+                    <h2 class="text-xl font-semibold mb-4">Wallet</h2>
+                    <p class="text-gray-600">Provider wallet for earnings.</p>
+                    <div class="bg-slate-900 text-gray-100 p-3 rounded-lg text-xs"><code>App\Models\Wallet</code></div>
+                </section>
+            </div>
+        </main>
+        <aside class="w-56 hidden lg:block flex-shrink-0 py-8 pl-4">
+            <nav class="sidebar-right space-y-1">
+                <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">On This Page</h4>
+                <ul class="space-y-1 text-sm">
+                    <li><a href="#user" class="block py-1 text-gray-600 hover:text-gray-900">User</a></li>
+                    <li><a href="#order" class="block py-1 text-gray-600 hover:text-gray-900">Order</a></li>
+                    <li><a href="#service" class="block py-1 text-gray-600 hover:text-gray-900">Service</a></li>
+                    <li><a href="#provider" class="block py-1 text-gray-600 hover:text-gray-900">ProviderProfile</a></li>
+                    <li><a href="#wallet" class="block py-1 text-gray-600 hover:text-gray-900">Wallet</a></li>
+                </ul>
+            </nav>
+        </aside>
+    </div>
+</body>
+</html>

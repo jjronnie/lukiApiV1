@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - Luki API Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>.sidebar-right{position:sticky;top:0;max-height:calc(100vh - 4rem);overflow-y:auto}</style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <header class="bg-slate-900 text-white border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between"><div class="flex items-center gap-3"><i class="fas fa-plug text-blue-400 text-lg"></i><a href="index.html" class="font-bold text-lg">Luki API</a><span class="bg-blue-600 px-2 py-0.5 rounded text-xs">v1</span></div><nav class="hidden md:flex items-center gap-6 text-sm"><a href="index.html" class="text-slate-400 hover:text-white">Docs</a><a href="https://laravel.com" target="_blank" class="text-slate-400 hover:text-white">Laravel.com</a></nav></div>
+    </header>
+    <div class="max-w-7xl mx-auto flex">
+        <aside class="w-64 hidden lg:block flex-shrink-0 py-8 pr-4 border-r border-gray-200">
+            <nav class="space-y-8">
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Getting Started</h3><ul class="space-y-1"><li><a href="index.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Introduction</a></li><li><a href="authentication.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Authentication</a></li><li><a href="errors.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Errors & Responses</a></li></ul></div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">API Reference</h3><ul class="space-y-1"><li><a href="auth.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Authentication</a></li><li><a href="catalog.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Service Catalog</a></li><li><a href="orders.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Orders</a></li><li><a href="provider.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Provider</a></li><li><a href="user.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Customer Profile</a></li><li><a href="notifications.html" class="block px-3 py-1.5 rounded text-sm bg-blue-50 text-blue-700 font-medium">Notifications</a></li><li><a href="pricing.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">Pricing</a></li></ul></div>
+                <div><h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Resources</h3><ul class="space-y-1"><li><a href="resources.html" class="block px-3 py-1.5 rounded text-sm hover:bg-gray-100">API Resources</a></li></ul></div>
+            </nav>
+        </aside>
+        <main class="flex-1 py-8 px-8 lg:px-12">
+            <div class="max-w-3xl">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">Notifications</h1>
+                <p class="text-lg text-gray-600 mb-8">Push notifications via FCM and in-app notifications.</p>
+                <div class="mb-6"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">Auth Required</span></div>
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="device">
+                    <div class="flex items-center gap-3 mb-4"><span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span><h2 class="text-lg font-semibold">/devices/fcm-token</h2></div>
+                    <p class="text-gray-600">Register FCM token.</p>
+                </section>
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="device-delete">
+                    <div class="flex items-center gap-3 mb-4"><span class="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">DELETE</span><h2 class="text-lg font-semibold">/devices/fcm-token</h2></div>
+                    <p class="text-gray-600">Remove device token.</p>
+                </section>
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="notifications">
+                    <div class="flex items-center gap-3 mb-4"><span class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold">GET</span><h2 class="text-lg font-semibold">/notifications</h2></div>
+                    <p class="text-gray-600">List notifications.</p>
+                </section>
+                <section class="bg-white rounded-xl shadow-sm border p-6 mb-6" id="test">
+                    <div class="flex items-center gap-3 mb-4"><span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span><h2 class="text-lg font-semibold">/notifications/test</h2></div>
+                    <p class="text-gray-600">Send test notification.</p>
+                </section>
+                <section class="bg-white rounded-xl shadow-sm border p-6" id="mark-read">
+                    <div class="flex items-center gap-3 mb-4"><span class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold">POST</span><h2 class="text-lg font-semibold">/notifications/{id}/read</h2></div>
+                    <p class="text-gray-600">Mark as read.</p>
+                </section>
+            </div>
+        </main>
+        <aside class="w-56 hidden lg:block flex-shrink-0 py-8 pl-4">
+            <nav class="sidebar-right space-y-1"><h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">On This Page</h4><ul class="space-y-1 text-sm"><li><a href="#device" class="block py-1 text-gray-600 hover:text-gray-900">Register Token</a></li><li><a href="#notifications" class="block py-1 text-gray-600 hover:text-gray-900">List</a></li><li><a href="#test" class="block py-1 text-gray-600 hover:text-gray-900">Test</a></li></ul></nav>
+        </aside>
+    </div>
+</body>
+</html>
